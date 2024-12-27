@@ -16,7 +16,7 @@ namespace MC_server.Core.Services
             _dbContext = dbContext;
         }
 
-        // 유저 생성 - test
+        // 유저 생성 - test4
         public async Task<User> CreateUserAsync(User user)
         {
             // 데이터 검증
