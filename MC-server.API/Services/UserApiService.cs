@@ -1,4 +1,5 @@
-﻿using MC_server.API.Utils;
+﻿using MC_server.API.DTOs.User;
+using MC_server.API.Utils;
 using MC_server.Core.Models;
 using MC_server.Core.Services;
 
@@ -60,6 +61,55 @@ namespace MC_server.API.Services
             };
 
             return await _userService.CreateUserAsync(user);
+        }
+
+        public async Task<Dictionary<string, object>> UpdateUserAsync(string userId, UserUpdateRequest request)
+        {
+            // 유저 정보 가져오기
+            User? user = await _userService.GetUserByIdAsync(userId);
+
+            if (user == null)
+            {
+                return null;
+            }
+
+            var updatedFields = new Dictionary<string, object>();
+
+            // 닉네임 업데이트
+            if (!string.IsNullOrWhiteSpace(request.Nickname))
+            {
+                // 닉네임 중복 확인
+                if (await _userService.IsNicknameTakenAsync(request.Nickname))
+                {
+                    throw new InvalidOperationException("Nickname is already taken");
+                }
+
+                user.Nickname = request.Nickname;
+                updatedFields["nickname"] = request.Nickname;
+            }
+
+            // 코인 업데이트
+            if (request.Coins.HasValue)
+            {
+                user.Coins = request.Coins.Value;
+                updatedFields["coins"] = request.Coins.Value;
+            }
+
+            // 레벨 업데이트
+            if (request.Level.HasValue)
+            {
+                user.Level = request.Level.Value;
+                updatedFields["level"] = request.Level.Value;
+            }
+
+            // 경험치 업데이트
+            if (request.Experience.HasValue)
+            {
+                user.Experience = request.Experience.Value;
+                updatedFields["experience"] = request.Experience.Value;
+            }
+
+            return updatedFields;
         }
     }
 }

@@ -56,5 +56,11 @@ namespace MC_server.Core.Services
                 await _dbContext.SaveChangesAsync();
             }
         }
+
+        // 유저 닉네임 중복 확인
+        public async Task<bool> IsNicknameTakenAsync(string nickname)
+        {
+            return await _dbContext.Users.AnyAsync(u => u.Nickname == nickname);
+        }
     }
 }
