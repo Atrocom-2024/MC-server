@@ -31,14 +31,9 @@ namespace MC_server.Core.Services
         }
 
         // 유저 정보 읽기
-        public async Task<User> GetUserByIdAsync(string userId)
+        public async Task<User?> GetUserByIdAsync(string userId)
         {
             User? user = await _dbContext.Users.FindAsync(userId);
-
-            if (user == null)
-            {
-                throw new KeyNotFoundException($"User with Id '{userId}' not found.");
-            }
 
             return user;
         }

@@ -1,4 +1,5 @@
-﻿using MC_server.Core.Models;
+﻿using MC_server.API.Utils;
+using MC_server.Core.Models;
 using MC_server.Core.Services;
 
 namespace MC_server.API.Services
@@ -19,10 +20,46 @@ namespace MC_server.API.Services
         public async Task<object> GetUserDetailsForApiAsync(string userId)
         {
             // Core 서비스 호출
-            User user = await _userService.GetUserByIdAsync(userId);
+            User? user = await _userService.GetUserByIdAsync(userId);
+
+            if (user == null)
+            {
+                throw new KeyNotFoundException($"User with Id '{userId}' not found.");
+            }
 
             // API에 특화된 데이터 반환
             return new { user.UserId, user.Nickname, user.Level, user.Coins };
+        }
+
+        public async Task<object> CreateUserAsync(string userId, string provider, string? email = null, string? name = null)
+        {
+
+            // provider가 google일 경우 추가 데이터 검증
+            if (provider.ToLower() == "google" && (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(name)))
+            {
+                throw new ArgumentException("For Google provider, email and name are required");
+            }
+
+            // 유저 중복 검증
+            if (await _userService.GetUserByIdAsync(userId) != null)
+            {
+                throw new InvalidOperationException($"User with ID '{userId}' already exists.");
+            }
+
+            // 유저 생성
+            User user = new User
+            {
+                UserId = userId,
+                Provider = provider,
+                Email = email, // google일 경우 추가, 다른 provider면 null
+                Name = name, // google일 경우 추가, 다른 provider면 null
+                Nickname = UserUtility.GenerateRandomNickname(), // 랜덤 닉네임 생성
+                Coins = 1000000, // 기본 코인
+                Level = 1, // 기본 레벨
+                Experience = 0, // 초기 경험치
+            };
+
+            return await _userService.CreateUserAsync(user);
         }
     }
 }
