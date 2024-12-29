@@ -5,6 +5,8 @@
     <RootNamespace>MC_server.GameRoom</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <OutputType>Exe</OutputType>
+    <StartupObject>MC_server.GameRoom.Program</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
