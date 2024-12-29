@@ -11,8 +11,17 @@ namespace MC_server.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            //builder.WebHost.UseKestrel(options =>
+            //{
+            //    options.ListenAnyIP(3000);
+            //});
 
+            foreach (var env in Environment.GetEnvironmentVariables())
+            {
+                Console.WriteLine($"{env}");
+            }
+
+            // Add services to the container.
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();

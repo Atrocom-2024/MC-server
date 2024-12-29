@@ -63,7 +63,7 @@ namespace MC_server.API.Services
             return await _userService.CreateUserAsync(user);
         }
 
-        public async Task<Dictionary<string, object>> UpdateUserAsync(string userId, UserUpdateRequest request)
+        public async Task<Dictionary<string, object>?> UpdateUserAsync(string userId, UserUpdateRequest request)
         {
             // 유저 정보 가져오기
             User? user = await _userService.GetUserByIdAsync(userId);
@@ -108,6 +108,9 @@ namespace MC_server.API.Services
                 user.Experience = request.Experience.Value;
                 updatedFields["experience"] = request.Experience.Value;
             }
+
+            // 변경 사항 저장
+            await _userService.UpdateUserAsync(user);
 
             return updatedFields;
         }
