@@ -37,16 +37,16 @@ namespace MC_server.GameRoom.Handlers
                     {
                         switch (request.RequestType)
                         {
-                            case "Bet":
-                                if (request.BetData != null)
-                                {
-                                    HandleBetting(client, request.BetData);
-                                }
-                                break;
                             case "JoinRoom":
                                 if (request.JoinRoomData != null)
                                 {
                                     HandleJoinRoom(client, request.JoinRoomData);
+                                }
+                                break;
+                            case "Bet":
+                                if (request.BetData != null)
+                                {
+                                    HandleBetting(client, request.BetData);
                                 }
                                 break;
                             default:
@@ -70,6 +70,26 @@ namespace MC_server.GameRoom.Handlers
 
             // 모든 경로에서 작업 완료
             await Task.CompletedTask;
+        }
+
+        private void HandleJoinRoom(TcpClient client, JoinRoomRequest joinRequest)
+        {
+            try
+            {
+                _clientManager.AssignClientToRoom(client, joinRequest.RoomId);
+                Console.WriteLine($"[socket] Client assigned to Room {joinRequest.RoomId}");
+
+                // 초기 세션 데이터 전달
+                var session = _gameRoomService.GetSession(joinRequest.RoomId);
+                if (session != null)
+                {
+                    BroadcastMessageToRoom(joinRequest.RoomId, session);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[socket] Error handling room join: {ex.Message}");
+            }
         }
 
         private void HandleBetting(TcpClient client, BetRequest betRequest)
@@ -99,31 +119,35 @@ namespace MC_server.GameRoom.Handlers
             }
         }
 
-        private void HandleJoinRoom(TcpClient client, RoomJoinRequest joinRequest)
-        {
-            try
-            {
-                _clientManager.AssignClientToRoom(client, joinRequest.RoomId);
-                Console.WriteLine($"[socket] Client assigned to Room {joinRequest.RoomId}");
-
-                // 초기 세션 데이터 전달
-                var session = _gameRoomService.GetSession(joinRequest.RoomId);
-                if (session != null)
-                {
-                    BroadcastMessageToRoom(joinRequest.RoomId, session);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[socket] Error handling room join: {ex.Message}");
-            }
-        }
-
         private void BroadcastMessageToRoom(int roomId, GameSession session)
         {
             lock ( _sessionLock) // GameSession 읽기 보호
             {
+                // 1. GameSession 데이터 직렬화
                 byte[] protobufMessage = SerializeProtobuf(session);
+
+                // 2. 해당 룸에 연결된 클라이언트 가져오기
+                var clientsInRoom = _clientManager.GetClientsInRoom(roomId);
+
+                // 3. 클라이언트들에게 데이터 전송
+                foreach (var client in clientsInRoom)
+                {
+                    try
+                    {
+                        if (client.Connected)
+                        {
+                            var stream = client.GetStream();
+                            stream.Write(protobufMessage, 0, protobufMessage.Length);
+                            Console.WriteLine($"[socket] Broadcasted to client: Room {roomId}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[socket] Error broadcasting to client in Room {roomId}: {ex.Message}");
+                    }
+                }
+
+                // 4. 디버깅을 위한 로그 출력
                 Console.WriteLine($"[socket] Broadcasted Protobuf Data to Room {roomId}: {Convert.ToBase64String(protobufMessage)}");
             }
         }

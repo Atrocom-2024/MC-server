@@ -1,7 +1,5 @@
-﻿using System.Collections.Concurrent;
-using ProtoBuf;
-
-using MC_server.GameRoom.Models;
+﻿using MC_server.GameRoom.Models;
+using System.Collections.Concurrent;
 
 namespace MC_server.GameRoom.Services
 {
@@ -14,16 +12,7 @@ namespace MC_server.GameRoom.Services
         {
             for (int roomId = 1; roomId <= 10; roomId++)
             {
-                _roomSessions[roomId] = new GameSession()
-                {
-                    SessionId = Guid.NewGuid().ToString(),
-                    RoomType = roomId,
-                    TotalBetAmount = 0,
-                    TotalUser = 0,
-                    TotalJackpotAmount = 0,
-                    IsJackpot = false,
-                    CreatedAt = DateTime.UtcNow
-                };
+                _roomSessions[roomId] = CreateNewSession(roomId);
             }
 
             Console.WriteLine("[socket] Initialized 10 game rooms");
@@ -31,7 +20,12 @@ namespace MC_server.GameRoom.Services
 
         public void ResetSession(int roomId)
         {
-            _roomSessions[roomId] = new GameSession
+            _roomSessions[roomId] = CreateNewSession(roomId);
+        }
+
+        public GameSession CreateNewSession(int roomId)
+        {
+            return new GameSession
             {
                 SessionId = Guid.NewGuid().ToString(),
                 RoomType = roomId,
@@ -52,26 +46,6 @@ namespace MC_server.GameRoom.Services
         public ConcurrentDictionary<int, GameSession> GetAllSessions()
         {
             return _roomSessions;
-        }
-
-        // Protobuf로 직렬화된 GameSession 반환
-        public byte[] SerializeGameSession(int roomId)
-        {
-            if (_roomSessions.TryGetValue(roomId, out var session))
-            {
-                using var memoryStream = new MemoryStream();
-                Serializer.Serialize(memoryStream, session);
-                return memoryStream.ToArray();
-            }
-
-            throw new InvalidOperationException($"Room {roomId} does not exist.");
-        }
-
-        // Protobuf로 직렬화된 데이터를 GameSession으로 복원
-        public GameSession DeserializeGameSession(byte[] data)
-        {
-            using var memoryStream = new MemoryStream(data);
-            return Serializer.Deserialize<GameSession>(memoryStream);
         }
     }
 }

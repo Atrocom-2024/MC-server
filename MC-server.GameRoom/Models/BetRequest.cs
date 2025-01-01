@@ -9,7 +9,7 @@ namespace MC_server.GameRoom.Models
         public string UserId { get; set; } = string.Empty;
 
         [ProtoMember(2)]
-        public long BetAmount { get; set; }
+        public int BetAmount { get; set; }
 
         [ProtoMember(3)]
         public int RoomType { get; set; }

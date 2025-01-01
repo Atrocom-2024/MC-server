@@ -9,9 +9,9 @@ namespace MC_server.GameRoom.Models
         public string RequestType { get; set; } = string.Empty; // "Bet", "JoinRoom"
 
         [ProtoMember(2)]
-        public BetRequest? BetData { get; set; }
+        public JoinRoomRequest? JoinRoomData { get; set; }
 
         [ProtoMember(3)]
-        public RoomJoinRequest? JoinRoomData { get; set; }
+        public BetRequest? BetData { get; set; }
     }
 }

@@ -3,7 +3,7 @@
 namespace MC_server.GameRoom.Models
 {
     [ProtoContract]
-    public class RoomJoinRequest
+    public class JoinRoomRequest
     {
         [ProtoMember(1)]
         public int RoomId { get; set; }
