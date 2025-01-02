@@ -76,10 +76,25 @@ namespace MC_server.GameRoom.Handlers
         {
             try
             {
-                _clientManager.AssignClientToRoom(client, joinRequest.RoomId);
+                _clientManager.AssignClientToRoom(client, joinRequest.UserId, joinRequest.RoomId);
                 Console.WriteLine($"[socket] Client assigned to Room {joinRequest.RoomId}");
 
-                // 초기 세션 데이터 전달
+                // 유저가 게임에 조인 후 해당 게임 유저 정보를 응답
+                var gameUserState = _clientManager.GetGameUserState(client);
+                if (gameUserState != null)
+                {
+                    var responseData = new ClientResponse
+                    {
+                        ResponseType = "GameUserState",
+                        GameUserState = gameUserState
+                    };
+                    var networkStream = client.GetStream();
+                    byte[] serializeResponseData = SerializeProtobuf(responseData);
+                    networkStream.Write(serializeResponseData, 0, serializeResponseData.Length);
+                    Console.WriteLine($"[socket] Sent user state to client: {joinRequest.UserId}");
+                }
+
+                // 초기 세션 데이터 전달 -> 해당 코드에서 유저 새로 접속 시 payout을 재계산해서 브로드캐스트하는 로직 추가 필요
                 var session = _gameRoomService.GetSession(joinRequest.RoomId);
                 if (session != null)
                 {
@@ -123,8 +138,13 @@ namespace MC_server.GameRoom.Handlers
         {
             lock ( _sessionLock) // GameSession 읽기 보호
             {
+                var responseData = new ClientResponse
+                {
+                    ResponseType = "GameState",
+                    GameState = session
+                };
                 // 1. GameSession 데이터 직렬화
-                byte[] protobufMessage = SerializeProtobuf(session);
+                byte[] protobufMessage = SerializeProtobuf(responseData);
 
                 // 2. 해당 룸에 연결된 클라이언트 가져오기
                 var clientsInRoom = _clientManager.GetClientsInRoom(roomId);
@@ -146,9 +166,6 @@ namespace MC_server.GameRoom.Handlers
                         Console.WriteLine($"[socket] Error broadcasting to client in Room {roomId}: {ex.Message}");
                     }
                 }
-
-                // 4. 디버깅을 위한 로그 출력
-                Console.WriteLine($"[socket] Broadcasted Protobuf Data to Room {roomId}: {Convert.ToBase64String(protobufMessage)}");
             }
         }
 

@@ -27,8 +27,6 @@ namespace MC_server.GameRoom.Services
         {
             return new GameSession
             {
-                SessionId = Guid.NewGuid().ToString(),
-                RoomType = roomId,
                 TotalBetAmount = 0,
                 TotalUser = 0,
                 TotalJackpotAmount = 0,
