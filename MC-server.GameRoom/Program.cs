@@ -30,8 +30,7 @@ namespace MC_server.GameRoom
 
         public static async Task Main(string[] args)
         {
-            Console.WriteLine($"Current Directory: {Directory.GetCurrentDirectory()}");
-            Env.Load(Path.Combine(AppContext.BaseDirectory, ".env"));
+            Env.Load();
 
             // 1. 서비스 구성
             var serviceProvider = ServiceConfigurator.ConfigureServices();

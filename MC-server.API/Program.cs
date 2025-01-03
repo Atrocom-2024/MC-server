@@ -9,6 +9,8 @@ namespace MC_server.API
     {
         public static void Main(string[] args)
         {
+            Env.Load();
+
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
@@ -16,8 +18,6 @@ namespace MC_server.API
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-
-            Env.Load();
 
             // Core 및 API 서비스 등록
             // .NET Core의 의존성 주입(Dependency Injection, DI)

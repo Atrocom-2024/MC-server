@@ -14,7 +14,7 @@ namespace MC_server.Core.Models
         [Column("target_payout", TypeName = "decimal(6, 3)")]
         public decimal TargetPayout { get; set; }
 
-        [Column("max_bet")]
+        [Column("max_bet_amount")]
         public long MaxBet { get; set; }
 
         [Column("max_user")]

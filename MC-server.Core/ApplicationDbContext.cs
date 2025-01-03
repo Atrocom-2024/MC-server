@@ -1,5 +1,4 @@
-﻿using DotNetEnv;
-using MC_server.Core.Models;
+﻿using MC_server.Core.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace MC_server.Core
@@ -10,8 +9,6 @@ namespace MC_server.Core
         
         public static void Configure(DbContextOptionsBuilder options)
         {
-            //Env.Load();
-
             string? db = Environment.GetEnvironmentVariable("DB_DATABASE");
             string? host = Environment.GetEnvironmentVariable("DB_HOST");
             string? port = Environment.GetEnvironmentVariable("DB_PORT");

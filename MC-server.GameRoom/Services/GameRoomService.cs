@@ -16,27 +16,20 @@ namespace MC_server.GameRoom.Services
             _roomService = roomService ?? throw new ArgumentNullException(nameof(roomService));
         }
 
-        //public async void InitializeRooms()
-        public void InitializeRooms()
+        public async void InitializeRooms()
         {
-            //Console.WriteLine($"DB_DATABASE: {Environment.GetEnvironmentVariable("DB_DATABASE")}");
-            //Console.WriteLine($"DB_HOST: {Environment.GetEnvironmentVariable("DB_HOST")}");
-            //Console.WriteLine($"DB_PORT: {Environment.GetEnvironmentVariable("DB_PORT")}");
-            //Console.WriteLine($"DB_USERNAME: {Environment.GetEnvironmentVariable("DB_USERNAME")}");
-            //Console.WriteLine($"DB_PASSWORD: {Environment.GetEnvironmentVariable("DB_PASSWORD")}");
+            // DB 연결 테스트
+            var allRooms = await _roomService.GetAllRoomsAsync();
 
-            //var allRooms = await _roomService.GetRoomByIdAsync(1);
-            //Console.WriteLine(allRooms);
-
-            //// 데이터 출력
-            //if (allRooms != null && allRooms.Count > 0)
-            //{
-            //    Console.WriteLine("Rooms fetched successfully:");
-            //    foreach (var room in allRooms)
-            //    {
-            //        Console.WriteLine($"Room ID: {room.RoomId}, Room Name: {room.TargetPayout}");
-            //    }
-            //}
+            // 데이터 출력
+            if (allRooms != null && allRooms.Count > 0)
+            {
+                Console.WriteLine("Rooms fetched successfully:");
+                foreach (var room in allRooms)
+                {
+                    Console.WriteLine($"Room ID: {room.RoomId}, TargetPayout: {room.TargetPayout}");
+                }
+            }
 
             for (int roomId = 1; roomId <= 10; roomId++)
             {
