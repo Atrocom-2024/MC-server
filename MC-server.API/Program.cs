@@ -17,7 +17,7 @@ namespace MC_server.API
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            builder.Services.AddDbContext<ApplicationDbContext>(ApplicationDbContext.Configure);
+            Env.Load();
 
             // Core 및 API 서비스 등록
             // .NET Core의 의존성 주입(Dependency Injection, DI)

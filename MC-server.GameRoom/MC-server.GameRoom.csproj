@@ -18,4 +18,10 @@
     <PackageReference Include="protobuf-net" Version="3.2.45" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update=".env">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

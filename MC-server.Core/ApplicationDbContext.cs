@@ -10,7 +10,7 @@ namespace MC_server.Core
         
         public static void Configure(DbContextOptionsBuilder options)
         {
-            Env.Load();
+            //Env.Load();
 
             string? db = Environment.GetEnvironmentVariable("DB_DATABASE");
             string? host = Environment.GetEnvironmentVariable("DB_HOST");

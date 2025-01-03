@@ -1,5 +1,6 @@
-﻿using MC_server.GameRoom.Models;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
+using MC_server.Core.Services;
+using MC_server.GameRoom.Models;
 
 namespace MC_server.GameRoom.Services
 {
@@ -8,8 +9,35 @@ namespace MC_server.GameRoom.Services
         // 각 게임 룸의 현재 세션 정보를 관리 -> 키는 룸 id, 값은 해당 룸의 세션 데이터
         private readonly ConcurrentDictionary<int, GameSession> _roomSessions = new ConcurrentDictionary<int, GameSession>();
 
+        private readonly RoomService _roomService;
+
+        public GameRoomService(RoomService roomService)
+        {
+            _roomService = roomService ?? throw new ArgumentNullException(nameof(roomService));
+        }
+
+        //public async void InitializeRooms()
         public void InitializeRooms()
         {
+            //Console.WriteLine($"DB_DATABASE: {Environment.GetEnvironmentVariable("DB_DATABASE")}");
+            //Console.WriteLine($"DB_HOST: {Environment.GetEnvironmentVariable("DB_HOST")}");
+            //Console.WriteLine($"DB_PORT: {Environment.GetEnvironmentVariable("DB_PORT")}");
+            //Console.WriteLine($"DB_USERNAME: {Environment.GetEnvironmentVariable("DB_USERNAME")}");
+            //Console.WriteLine($"DB_PASSWORD: {Environment.GetEnvironmentVariable("DB_PASSWORD")}");
+
+            //var allRooms = await _roomService.GetRoomByIdAsync(1);
+            //Console.WriteLine(allRooms);
+
+            //// 데이터 출력
+            //if (allRooms != null && allRooms.Count > 0)
+            //{
+            //    Console.WriteLine("Rooms fetched successfully:");
+            //    foreach (var room in allRooms)
+            //    {
+            //        Console.WriteLine($"Room ID: {room.RoomId}, Room Name: {room.TargetPayout}");
+            //    }
+            //}
+
             for (int roomId = 1; roomId <= 10; roomId++)
             {
                 _roomSessions[roomId] = CreateNewSession(roomId);

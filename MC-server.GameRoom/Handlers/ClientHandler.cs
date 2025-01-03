@@ -17,8 +17,8 @@ namespace MC_server.GameRoom.Handlers
 
         public ClientHandler(GameRoomService gameRoomService, ClientManager clientManager)
         {
-            _gameRoomService = gameRoomService;
-            _clientManager = clientManager;
+            _gameRoomService = gameRoomService ?? throw new ArgumentNullException(nameof(gameRoomService));
+            _clientManager = clientManager ?? throw new ArgumentNullException(nameof(clientManager));
         }
 
         public async Task HandleClientAsync(TcpClient client)
@@ -53,7 +53,6 @@ namespace MC_server.GameRoom.Handlers
                                 Console.WriteLine("[socket] Unknown request type received.");
                                 break;
                         }
-
                     }
                 }
             }
@@ -98,7 +97,7 @@ namespace MC_server.GameRoom.Handlers
                 var session = _gameRoomService.GetSession(joinRequest.RoomId);
                 if (session != null)
                 {
-                    BroadcastMessageToRoom(joinRequest.RoomId, session);
+                    BroadcastGameState(joinRequest.RoomId, session);
                 }
             }
             catch (Exception ex)
@@ -125,7 +124,7 @@ namespace MC_server.GameRoom.Handlers
                     Console.WriteLine($"[socket] Room {roomId}: TotalBet = {session.TotalBetAmount}");
 
                     // 변경된 세션 데이터 브로드캐스트
-                    BroadcastMessageToRoom(roomId, session);
+                    BroadcastGameState(roomId, session);
                 }
             }
             catch (Exception ex)
@@ -134,22 +133,24 @@ namespace MC_server.GameRoom.Handlers
             }
         }
 
-        private void BroadcastMessageToRoom(int roomId, GameSession session)
+        private void BroadcastGameState(int roomId, GameSession session)
         {
             lock ( _sessionLock) // GameSession 읽기 보호
             {
+                // 1. 응답 데이터 생성
                 var responseData = new ClientResponse
                 {
                     ResponseType = "GameState",
                     GameState = session
                 };
-                // 1. GameSession 데이터 직렬화
+
+                // 2. 응답 데이터 직렬화
                 byte[] protobufMessage = SerializeProtobuf(responseData);
 
-                // 2. 해당 룸에 연결된 클라이언트 가져오기
+                // 3. 해당 룸에 연결된 클라이언트 가져오기
                 var clientsInRoom = _clientManager.GetClientsInRoom(roomId);
 
-                // 3. 클라이언트들에게 데이터 전송
+                // 4. 클라이언트들에게 데이터 전송
                 foreach (var client in clientsInRoom)
                 {
                     try
@@ -169,16 +170,16 @@ namespace MC_server.GameRoom.Handlers
             }
         }
 
-        private Task DeserializeProtobuf<Task>(NetworkStream networkStream)
-        {
-            return Serializer.DeserializeWithLengthPrefix<Task>(networkStream, PrefixStyle.Base128);
-        }
-
         private byte[] SerializeProtobuf<Task>(Task obj)
         {
             using var memoryStream = new MemoryStream();
             Serializer.SerializeWithLengthPrefix(memoryStream, obj, PrefixStyle.Base128);
             return memoryStream.ToArray();
+        }
+
+        private T DeserializeProtobuf<T>(NetworkStream networkStream)
+        {
+            return Serializer.DeserializeWithLengthPrefix<T>(networkStream, PrefixStyle.Base128);
         }
     }
 }

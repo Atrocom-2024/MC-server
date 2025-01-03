@@ -45,6 +45,7 @@ namespace MC_server.GameRoom.Managers
             _clientStates.AddOrUpdate(client, userState, (key, existingValue) => userState);
         }
 
+        // 특정 클라이언트의 정보를 반환하는 메서드
         public GameUserState GetGameUserState(TcpClient client)
         {
             if (_clientStates.TryGetValue(client, out var userState))
@@ -55,6 +56,7 @@ namespace MC_server.GameRoom.Managers
             throw new InvalidOperationException("Client not found or not assigned to any room.");
         }
 
+        // 특정 클라이언트가 어떤 룸에 참여 중인지 반환하는 메서드
         public int GetRoomId(TcpClient client)
         {
             if (_clientStates.TryGetValue(client, out var userState))
@@ -65,6 +67,7 @@ namespace MC_server.GameRoom.Managers
             throw new InvalidOperationException("Client not assigned to any room.");
         }
 
+        // 특정 룸에 연결된 클라이언트 정보를 반환하는 메서드
         public IEnumerable<TcpClient> GetClientsInRoom(int roomId)
         {
             return _clientStates.Where(pair => pair.Value.RoomId == roomId).Select(pair => pair.Key);

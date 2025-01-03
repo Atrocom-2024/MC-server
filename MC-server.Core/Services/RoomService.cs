@@ -1,4 +1,5 @@
 ﻿using MC_server.Core.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace MC_server.Core.Services
 {
@@ -21,6 +22,11 @@ namespace MC_server.Core.Services
         public async Task<Room?> GetRoomByIdAsync(int roomId)
         {
             return await _dbContext.Rooms.FindAsync(roomId);
+        }
+
+        public async Task<List<Room>> GetAllRoomsAsync()
+        {
+            return await _dbContext.Rooms.ToListAsync();
         }
 
         public async Task DeleteRoomAsync(int roomId)

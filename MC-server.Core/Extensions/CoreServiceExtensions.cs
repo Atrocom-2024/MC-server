@@ -1,5 +1,4 @@
-﻿using System;
-using MC_server.Core.Services;
+﻿using MC_server.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MC_server.Core.Extensions
@@ -8,6 +7,9 @@ namespace MC_server.Core.Extensions
     {
         public static IServiceCollection AddCoreServices(this IServiceCollection services)
         {
+            // DbContext 등록
+            services.AddDbContext<ApplicationDbContext>(ApplicationDbContext.Configure);
+
             services.AddScoped<UserService>();
             services.AddScoped<RoomService>();
 
