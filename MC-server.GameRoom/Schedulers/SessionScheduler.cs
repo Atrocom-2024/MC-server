@@ -16,6 +16,7 @@ namespace MC_server.GameRoom.Schedulers
         }
 
         // 비동기 메서드에서 반환값이 없을 땐 Task를 사용
+        // TODO: 세션이 끝날 때 유저들에게 payout 반환
         public async Task StartSessionTimers()
         {
             var allRooms = await _roomService.GetAllRoomsAsync();
@@ -24,6 +25,8 @@ namespace MC_server.GameRoom.Schedulers
             {
                 foreach (var room in allRooms)
                 {
+                    // TODO: 모든 룸이 같은 시간에 초기화되는 것이 아님, 어느 한 룸에서 잭팟이 터지면 초기화되면서 초기화 시간이 변경될 수 있음
+                    // 따라서 룸 별로 다르게 시간을 재야 함
                     Timer timer = new Timer(_ =>
                     {
                         _gameRoomManager.ResetSession(room);

@@ -112,6 +112,7 @@ namespace MC_server.GameRoom.Handlers
 
         private void HandleBetting(TcpClient client, BetRequest betRequest)
         {
+            // TODO: TotalBetAmount가 MaxBetAmount를 초과할 때는 모든 유저들에게 페이아웃 반환하고 모든 유저의 페이아웃 초기화
             try
             {
                 int roomId = _clientManager.GetRoomId(client);
@@ -124,6 +125,7 @@ namespace MC_server.GameRoom.Handlers
                         // 배팅 처리
                         // TODO: 유저 정보에서 배팅 금액만큼 코인 제거 기능
                         // TODO: 해당 유저의 페이아웃 재계산 기능
+                        // TODO: TotalBetAmount에 따라 해당 유저의 잭팟 확률을 조정하는 기능
                         session.TotalBetAmount += betRequest.BetAmount;
                         session.TotalJackpotAmount += (long)Math.Round(betRequest.BetAmount * 0.1);
                     }
@@ -138,6 +140,8 @@ namespace MC_server.GameRoom.Handlers
                 Console.WriteLine($"[socket] Error handling betting: {ex.Message}");
             }
         }
+
+        // TODO: 클라이언트가 게임에서 승리 시 코인을 더하는 기능 -> 페이아웃은 유저의 보유 금액 당 이익이 10프로를 초과하면 해당 유저는 페이아웃 초기화
 
         private void BroadcastGameState(int roomId, GameSession session)
         {

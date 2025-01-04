@@ -38,6 +38,7 @@ namespace MC_server.GameRoom.Managers
         public void ResetSession(Room room)
         {
             // TODO: 룸 초기화 시 IsJackpot이 false이면 기존의 잭팟 금액 유지
+            // TODO: 잭팟이 터졌을 때 해당 룸 세션 초기화 기능 -> 다른 유저들에겐 TotalBetAmount의 10% 반환 후 페이아웃은 반환되지 않고 초기화
             _roomSessions[room.RoomId] = CreateNewSession(room);
         }
 
