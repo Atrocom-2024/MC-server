@@ -2,8 +2,8 @@
 
 using MC_server.GameRoom.Handlers;
 using MC_server.GameRoom.Managers;
-using MC_server.GameRoom.Services;
 using MC_server.Core.Extensions;
+using MC_server.GameRoom.Schedulers;
 
 namespace MC_server.GameRoom.Extensions
 {
@@ -17,8 +17,8 @@ namespace MC_server.GameRoom.Extensions
 
             // DI 컨테이너에 서비스 등록
             serviceCollection.AddSingleton<Program>();
-            serviceCollection.AddSingleton<GameRoomService>();
-            serviceCollection.AddSingleton<SessionService>();
+            serviceCollection.AddSingleton<GameRoomManager>();
+            serviceCollection.AddSingleton<SessionScheduler>();
             serviceCollection.AddSingleton<ClientManager>();
 
             serviceCollection.AddScoped<ClientHandler>();

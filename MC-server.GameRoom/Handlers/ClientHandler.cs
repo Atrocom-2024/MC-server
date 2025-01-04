@@ -1,7 +1,6 @@
 ﻿using System.Net.Sockets;
 using ProtoBuf;
 
-using MC_server.GameRoom.Services;
 using MC_server.GameRoom.Models;
 using MC_server.GameRoom.Managers;
 
@@ -9,15 +8,15 @@ namespace MC_server.GameRoom.Handlers
 {
     public class ClientHandler
     {
-        private readonly GameRoomService _gameRoomService;
+        private readonly GameRoomManager _gameRoomManager;
         private readonly ClientManager _clientManager;
 
         // GameSession에 대한 동기화 제어를 위해 사용됨 -> 다수의 스레드가 동시에 GameSession을 읽거나 수정하려고 할 때 충돌을 방지
         private readonly object _sessionLock = new object();
 
-        public ClientHandler(GameRoomService gameRoomService, ClientManager clientManager)
+        public ClientHandler(GameRoomManager gameRoomManager, ClientManager clientManager)
         {
-            _gameRoomService = gameRoomService ?? throw new ArgumentNullException(nameof(gameRoomService));
+            _gameRoomManager = gameRoomManager ?? throw new ArgumentNullException(nameof(gameRoomManager));
             _clientManager = clientManager ?? throw new ArgumentNullException(nameof(clientManager));
         }
 
@@ -75,7 +74,7 @@ namespace MC_server.GameRoom.Handlers
         {
             try
             {
-                _clientManager.AssignClientToRoom(client, joinRequest.UserId, joinRequest.RoomId);
+                _clientManager.AssignClientToGameRoom(client, joinRequest.UserId, joinRequest.RoomId);
                 Console.WriteLine($"[socket] Client assigned to Room {joinRequest.RoomId}");
 
                 // 유저가 게임에 조인 후 해당 게임 유저 정보를 응답
@@ -94,7 +93,7 @@ namespace MC_server.GameRoom.Handlers
                 }
 
                 // 초기 세션 데이터 전달 -> 해당 코드에서 유저 새로 접속 시 payout을 재계산해서 브로드캐스트하는 로직 추가 필요
-                var session = _gameRoomService.GetSession(joinRequest.RoomId);
+                var session = _gameRoomManager.GetSession(joinRequest.RoomId);
                 if (session != null)
                 {
                     BroadcastGameState(joinRequest.RoomId, session);
@@ -111,7 +110,7 @@ namespace MC_server.GameRoom.Handlers
             try
             {
                 int roomId = _clientManager.GetRoomId(client);
-                var session = _gameRoomService.GetSession(roomId);
+                var session = _gameRoomManager.GetSession(roomId);
 
                 if (session != null)
                 {
@@ -170,14 +169,17 @@ namespace MC_server.GameRoom.Handlers
             }
         }
 
-        private byte[] SerializeProtobuf<Task>(Task obj)
+
+        // 클래스의 인스턴스 데이터나 필드를 참조하지 않기 때문에, 해당 메서드는 인스턴스 메서드일 필요가 없음
+        // 정적 메서드는 인스턴스 메서드보다 메모리를 덜 사용
+        private static byte[] SerializeProtobuf<Task>(Task obj)
         {
             using var memoryStream = new MemoryStream();
             Serializer.SerializeWithLengthPrefix(memoryStream, obj, PrefixStyle.Base128);
             return memoryStream.ToArray();
         }
 
-        private T DeserializeProtobuf<T>(NetworkStream networkStream)
+        private static T DeserializeProtobuf<T>(NetworkStream networkStream)
         {
             return Serializer.DeserializeWithLengthPrefix<T>(networkStream, PrefixStyle.Base128);
         }

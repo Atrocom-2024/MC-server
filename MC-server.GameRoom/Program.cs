@@ -1,12 +1,12 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using DotNetEnv;
 using Microsoft.Extensions.DependencyInjection;
 
 using MC_server.GameRoom.Extensions;
 using MC_server.GameRoom.Handlers;
 using MC_server.GameRoom.Managers;
-using MC_server.GameRoom.Services;
-using DotNetEnv;
+using MC_server.GameRoom.Schedulers;
 
 namespace MC_server.GameRoom
 {
@@ -14,16 +14,16 @@ namespace MC_server.GameRoom
     public class Program
     {
         // 의존성 필드 선언
-        private readonly GameRoomService _gameRoomService;
-        private readonly SessionService _sessionService;
+        private readonly GameRoomManager _gameRoomManager;
+        private readonly SessionScheduler _sessionScheduler;
         private readonly ClientManager _clientManager;
         private readonly ClientHandler _clientHandler;
 
         // 의존성 주입 생성자
-        public Program(GameRoomService gameRoomService, SessionService sessionService, ClientManager clientManager, ClientHandler clientHandler)
+        public Program(GameRoomManager gameRoomManager, SessionScheduler sessionScheduler, ClientManager clientManager, ClientHandler clientHandler)
         {
-            _gameRoomService = gameRoomService ?? throw new ArgumentNullException(nameof(gameRoomService));
-            _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
+            _gameRoomManager = gameRoomManager ?? throw new ArgumentNullException(nameof(gameRoomManager));
+            _sessionScheduler = sessionScheduler ?? throw new ArgumentNullException(nameof(sessionScheduler));
             _clientManager = clientManager ?? throw new ArgumentNullException(nameof(clientManager));
             _clientHandler = clientHandler ?? throw new ArgumentNullException(nameof(clientHandler));
         }
@@ -43,10 +43,10 @@ namespace MC_server.GameRoom
         public async Task Run()
         {
             // 1. 게임 룸 서비스 초기화
-            _gameRoomService.InitializeRooms();// 초기화: 10개의 룸 생성
+            await _gameRoomManager.InitializeRooms();// 초기화: 10개의 룸 생성
 
             // 2. 세션 타이머 시작
-            _sessionService.StartSessionTimers();
+            await _sessionScheduler.StartSessionTimers();
 
             // 3. TCP 서버 시작
             await StartTcpServer();

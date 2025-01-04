@@ -15,13 +15,13 @@ namespace MC_server.Core.Models
         public decimal TargetPayout { get; set; }
 
         [Column("max_bet_amount")]
-        public long MaxBet { get; set; }
+        public long MaxBetAmount { get; set; }
 
         [Column("max_user")]
         public int MaxUser { get; set; }
 
-        [Column("jackpot_amount")]
-        public long JackpotAmount { get; set; }
+        [Column("base_jackpot_amount")]
+        public long BaseJackpotAmount { get; set; }
 
         [Column("updated_at", TypeName = "datetime2")]
         [DatabaseGenerated(DatabaseGeneratedOption.Computed)] // 데이터베이스에서 기본값 설정

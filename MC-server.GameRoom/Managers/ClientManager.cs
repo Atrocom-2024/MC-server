@@ -1,5 +1,6 @@
 ﻿using System.Net.Sockets;
 using System.Collections.Concurrent;
+
 using MC_server.GameRoom.Models;
 
 namespace MC_server.GameRoom.Managers
@@ -30,7 +31,7 @@ namespace MC_server.GameRoom.Managers
             _clientStates.TryRemove(client, out _);
         }
 
-        public void AssignClientToRoom(TcpClient client, string userId, int roomId)
+        public void AssignClientToGameRoom(TcpClient client, string userId, int roomId)
         {
             var userState = new GameUserState
             {
