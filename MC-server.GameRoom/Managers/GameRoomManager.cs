@@ -37,6 +37,7 @@ namespace MC_server.GameRoom.Managers
 
         public void ResetSession(Room room)
         {
+            // TODO: 룸 초기화 시 IsJackpot이 false이면 기존의 잭팟 금액 유지
             _roomSessions[room.RoomId] = CreateNewSession(room);
         }
 
@@ -56,6 +57,17 @@ namespace MC_server.GameRoom.Managers
                 BaseJackpotAmount = room.BaseJackpotAmount,
                 CreatedAt = DateTime.UtcNow
             };
+        }
+
+        public void IncrementTotalUser(int roomId)
+        {
+            var session = GetSession(roomId);
+
+            if (session != null)
+            {
+                session.TotalUser++;
+                Console.WriteLine($"[socket] Room {roomId}: Total users updated to {session.TotalUser}");
+            }
         }
 
         public GameSession? GetSession(int roomId)

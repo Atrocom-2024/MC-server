@@ -72,10 +72,15 @@ namespace MC_server.GameRoom.Handlers
 
         private void HandleJoinRoom(TcpClient client, JoinRoomRequest joinRequest)
         {
+            // TODO: 유저가 해당 룸에 Join 할 때마다 모든 유저의 페이아웃을 재계산 후 브로드캐스트 기능
             try
             {
+                // 유저가 해당 룸에 Join 시 해당 룸에 유저 정보 등록
                 _clientManager.AssignClientToGameRoom(client, joinRequest.UserId, joinRequest.RoomId);
                 Console.WriteLine($"[socket] Client assigned to Room {joinRequest.RoomId}");
+
+                // 유저가 해당 룸에 Join 할 때마다 해당 게임의 TotalUser + 1
+                _gameRoomManager.IncrementTotalUser(joinRequest.RoomId);
 
                 // 유저가 게임에 조인 후 해당 게임 유저 정보를 응답
                 var gameUserState = _clientManager.GetGameUserState(client);
@@ -117,6 +122,8 @@ namespace MC_server.GameRoom.Handlers
                     lock (_sessionLock) // GameSession 업데이트 보호
                     {
                         // 배팅 처리
+                        // TODO: 유저 정보에서 배팅 금액만큼 코인 제거 기능
+                        // TODO: 해당 유저의 페이아웃 재계산 기능
                         session.TotalBetAmount += betRequest.BetAmount;
                         session.TotalJackpotAmount += (long)Math.Round(betRequest.BetAmount * 0.1);
                     }
