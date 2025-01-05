@@ -29,7 +29,6 @@ namespace MC_server.GameRoom.Managers
                 foreach (var room in allRooms)
                 {
                     _roomSessions[room.RoomId] = CreateNewSession(room);
-                    Console.WriteLine($"Room ID: {room.RoomId}, TargetPayout: {room.TargetPayout}, BaseJackpotAmount: {room.BaseJackpotAmount}");
                 }
             }
             Console.WriteLine("[socket] Initialized 10 game rooms");

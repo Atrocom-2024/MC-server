@@ -35,7 +35,7 @@ namespace MC_server.GameRoom
             // 1. 서비스 구성
             var serviceProvider = ServiceConfigurator.ConfigureServices();
 
-            // 2. Program 인스천스 생성 및 실행
+            // 2. Program 인스턴스 생성 및 실행
             var program = serviceProvider.GetRequiredService<Program>();
             await program.Run();
         }

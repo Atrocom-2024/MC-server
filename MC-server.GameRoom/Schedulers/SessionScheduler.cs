@@ -1,4 +1,6 @@
-﻿using MC_server.GameRoom.Managers;
+﻿using System.Collections.Concurrent;
+
+using MC_server.GameRoom.Managers;
 using MC_server.Core.Services;
 
 namespace MC_server.GameRoom.Schedulers
@@ -6,8 +8,10 @@ namespace MC_server.GameRoom.Schedulers
     public class SessionScheduler
     {
         private readonly GameRoomManager _gameRoomManager;
-
         private readonly RoomService _roomService;
+
+        // 룸별 타이머 관리
+        private readonly ConcurrentDictionary<int, Timer> _roomTimers = new ConcurrentDictionary<int, Timer>();
 
         public SessionScheduler(GameRoomManager gameRoomManager, RoomService roomService)
         {
