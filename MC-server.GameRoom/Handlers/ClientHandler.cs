@@ -75,6 +75,7 @@ namespace MC_server.GameRoom.Handlers
             // TODO: 유저가 해당 룸에 Join 할 때마다 모든 유저의 페이아웃을 재계산 후 브로드캐스트 기능
             try
             {
+                Console.WriteLine($"Join User ID: {joinRequest.UserId}");
                 // 유저가 해당 룸에 Join 시 해당 룸에 유저 정보 등록
                 _clientManager.AssignClientToGameRoom(client, joinRequest.UserId, joinRequest.RoomId);
                 Console.WriteLine($"[socket] Client assigned to Room {joinRequest.RoomId}");
