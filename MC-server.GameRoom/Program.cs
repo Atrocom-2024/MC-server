@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using MC_server.GameRoom.Extensions;
 using MC_server.GameRoom.Handlers;
 using MC_server.GameRoom.Managers;
-using MC_server.GameRoom.Schedulers;
 
 namespace MC_server.GameRoom
 {
@@ -15,17 +14,15 @@ namespace MC_server.GameRoom
     {
         // 의존성 필드 선언
         private readonly GameRoomManager _gameRoomManager;
-        private readonly SessionScheduler _sessionScheduler;
         private readonly ClientManager _clientManager;
-        private readonly ClientHandler _clientHandler;
+        private readonly GameRoomHandler _gameRoomHandler;
 
         // 의존성 주입 생성자
-        public Program(GameRoomManager gameRoomManager, SessionScheduler sessionScheduler, ClientManager clientManager, ClientHandler clientHandler)
+        public Program(ClientManager clientManager, GameRoomManager gameRoomManager, GameRoomHandler gameRoomHandler)
         {
-            _gameRoomManager = gameRoomManager ?? throw new ArgumentNullException(nameof(gameRoomManager));
-            _sessionScheduler = sessionScheduler ?? throw new ArgumentNullException(nameof(sessionScheduler));
             _clientManager = clientManager ?? throw new ArgumentNullException(nameof(clientManager));
-            _clientHandler = clientHandler ?? throw new ArgumentNullException(nameof(clientHandler));
+            _gameRoomManager = gameRoomManager ?? throw new ArgumentNullException(nameof(gameRoomManager));
+            _gameRoomHandler = gameRoomHandler ?? throw new ArgumentNullException(nameof(gameRoomHandler));
         }
 
         public static async Task Main(string[] args)
@@ -42,13 +39,10 @@ namespace MC_server.GameRoom
 
         public async Task Run()
         {
-            // 1. 게임 룸 서비스 초기화
+            // 1. 게임 룸 세션 초기화
             await _gameRoomManager.InitializeRooms();// 초기화: 10개의 룸 생성
 
-            // 2. 세션 타이머 시작
-            await _sessionScheduler.StartSessionTimers();
-
-            // 3. TCP 서버 시작
+            // 2. TCP 서버 시작
             await StartTcpServer();
         }
 
@@ -71,7 +65,7 @@ namespace MC_server.GameRoom
                     _clientManager.AddClient(client);
 
                     // 5. 클라이언트 처리 시작
-                    _ = _clientHandler.HandleClientAsync(client);
+                    _ = _gameRoomHandler.HandleClientAsync(client);
                 }
                 catch (Exception ex)
                 {

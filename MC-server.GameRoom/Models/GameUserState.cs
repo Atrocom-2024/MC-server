@@ -12,12 +12,12 @@ namespace MC_server.GameRoom.Models
         public int RoomId { get; set; }
 
         [ProtoMember(3)]
-        public double CurrentPayout { get; set; }
+        public decimal CurrentPayout { get; set; }
 
         [ProtoMember(4)]
         public long UserTotalBetAmount { get; set; }
 
         [ProtoMember(5)]
-        public double JackpotProb { get; set; }
+        public decimal JackpotProb { get; set; }
     }
 }

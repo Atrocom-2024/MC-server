@@ -3,21 +3,27 @@ using ProtoBuf;
 
 using MC_server.GameRoom.Models;
 using MC_server.GameRoom.Managers;
+using MC_server.GameRoom.Service;
+using System.Collections.Concurrent;
+using MC_server.Core.Models;
 
 namespace MC_server.GameRoom.Handlers
 {
-    public class ClientHandler
+    public class GameRoomHandler
     {
         private readonly GameRoomManager _gameRoomManager;
         private readonly ClientManager _clientManager;
 
+        private readonly UserTcpService _userTcpService;
+
         // GameSession에 대한 동기화 제어를 위해 사용됨 -> 다수의 스레드가 동시에 GameSession을 읽거나 수정하려고 할 때 충돌을 방지
         private readonly object _sessionLock = new object();
 
-        public ClientHandler(GameRoomManager gameRoomManager, ClientManager clientManager)
+        public GameRoomHandler(GameRoomManager gameRoomManager, ClientManager clientManager, UserTcpService userTcpService)
         {
             _gameRoomManager = gameRoomManager ?? throw new ArgumentNullException(nameof(gameRoomManager));
             _clientManager = clientManager ?? throw new ArgumentNullException(nameof(clientManager));
+            _userTcpService = userTcpService ?? throw new ArgumentNullException(nameof(userTcpService));
         }
 
         public async Task HandleClientAsync(TcpClient client)
@@ -45,7 +51,7 @@ namespace MC_server.GameRoom.Handlers
                             case "Bet":
                                 if (request.BetData != null)
                                 {
-                                    HandleBetting(client, request.BetData);
+                                    _ = HandleBetting(client, request.BetData);
                                 }
                                 break;
                             default:
@@ -99,7 +105,7 @@ namespace MC_server.GameRoom.Handlers
                 }
 
                 // 초기 세션 데이터 전달 -> 해당 코드에서 유저 새로 접속 시 payout을 재계산해서 브로드캐스트하는 로직 추가 필요
-                var session = _gameRoomManager.GetSession(joinRequest.RoomId);
+                var session = _gameRoomManager.GetGameSession(joinRequest.RoomId);
                 if (session != null)
                 {
                     BroadcastGameState(joinRequest.RoomId, session);
@@ -111,29 +117,42 @@ namespace MC_server.GameRoom.Handlers
             }
         }
 
-        private void HandleBetting(TcpClient client, BetRequest betRequest)
+        private async Task HandleBetting(TcpClient client, BetRequest betRequest)
         {
             // TODO: TotalBetAmount가 MaxBetAmount를 초과할 때는 모든 유저들에게 페이아웃 반환하고 모든 유저의 페이아웃 초기화
             try
             {
-                int roomId = _clientManager.GetRoomId(client);
-                var session = _gameRoomManager.GetSession(roomId);
+                int roomId = _clientManager.GetUserRoomId(client);
+                var userState = _clientManager.GetGameUserState(client);
+                var session = _gameRoomManager.GetGameSession(roomId);
 
-                if (session != null)
+                if (session != null && userState != null)
                 {
-                    lock (_sessionLock) // GameSession 업데이트 보호
-                    {
-                        // 배팅 처리
-                        // TODO: 유저 정보에서 배팅 금액만큼 코인 제거 기능
-                        // TODO: 해당 유저의 페이아웃 재계산 기능
-                        // TODO: TotalBetAmount에 따라 해당 유저의 잭팟 확률을 조정하는 기능
-                        session.TotalBetAmount += betRequest.BetAmount;
-                        session.TotalJackpotAmount += (long)Math.Round(betRequest.BetAmount * 0.1);
+                    // 유저의 코인 수 변경
+                    // TODO: 유저 정보에서 배팅 금액만큼 코인 제거 기능
+                    var updatedUser = await _userTcpService.UpdateUserAsync(userState.GameUserId, "coins", -betRequest.BetAmount);
+
+                    if (updatedUser != null)
+                    { 
+                        lock (_sessionLock) // GameSession 업데이트 보호
+                        {
+                            // 배팅 처리
+                            // 배팅한 게임 유저 상태의 TotalBet을 수정
+                            _clientManager.UpdateGameUserState(client, "userTotalBetAmount", betRequest.BetAmount);
+
+                            // TODO: 해당 유저의 페이아웃 재계산 기능
+                            // TODO: TotalBetAmount에 따라 해당 유저의 잭팟 확률을 조정하는 기능
+                            session.TotalBetAmount += betRequest.BetAmount;
+                            session.TotalJackpotAmount += (long)Math.Round(betRequest.BetAmount * 0.1);
+                        }
                     }
                     Console.WriteLine($"[socket] Room {roomId}: TotalBet = {session.TotalBetAmount}");
 
                     // 변경된 세션 데이터 브로드캐스트
                     BroadcastGameState(roomId, session);
+
+                    // 변경된 게임 유저 상태 브로드캐스트
+                    BroadcaseGameUserState(client, _clientManager.GetAllClients());
                 }
             }
             catch (Exception ex)
@@ -141,6 +160,7 @@ namespace MC_server.GameRoom.Handlers
                 Console.WriteLine($"[socket] Error handling betting: {ex.Message}");
             }
         }
+
 
         // TODO: 클라이언트가 게임에서 승리 시 코인을 더하는 기능 -> 페이아웃은 유저의 보유 금액 당 이익이 10프로를 초과하면 해당 유저는 페이아웃 초기화
 
@@ -177,6 +197,28 @@ namespace MC_server.GameRoom.Handlers
                     {
                         Console.WriteLine($"[socket] Error broadcasting to client in Room {roomId}: {ex.Message}");
                     }
+                }
+            }
+        }
+
+        private void BroadcaseGameUserState(TcpClient sender, ConcurrentDictionary<TcpClient, GameUserState> clients)
+        {
+            foreach (var client in clients.Keys)
+            {
+                try
+                {
+                    var responseData = new ClientResponse
+                    {
+                        ResponseType = "GameUserState",
+                        GameUserState = _clientManager.GetGameUserState(client)
+                    };
+                    byte[] protobufMessage = SerializeProtobuf(responseData);
+                    var stream = client.GetStream();
+                    stream.Write(protobufMessage, 0, protobufMessage.Length);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[socket] Error broadcasting to client in Room {ex.Message}");
                 }
             }
         }

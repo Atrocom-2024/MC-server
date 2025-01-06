@@ -3,6 +3,7 @@
 using MC_server.GameRoom.Models;
 using MC_server.Core.Models;
 using MC_server.Core.Services;
+using MC_server.GameRoom.Utils;
 
 namespace MC_server.GameRoom.Managers
 {
@@ -10,8 +11,12 @@ namespace MC_server.GameRoom.Managers
     {
         // 각 게임 룸의 현재 세션 정보를 관리 -> 키는 룸 id, 값은 해당 룸의 세션 데이터
         private readonly ConcurrentDictionary<int, GameSession> _roomSessions = new ConcurrentDictionary<int, GameSession>();
+        // 각 룸별 타이머 관리
+        private readonly ConcurrentDictionary<int, Timer> _roomTimers = new ConcurrentDictionary<int, Timer>();
 
         private readonly RoomService _roomService;
+
+        private readonly object _lock = new object();
 
         public GameRoomManager(RoomService roomService)
         {
@@ -28,49 +33,93 @@ namespace MC_server.GameRoom.Managers
             {
                 foreach (var room in allRooms)
                 {
-                    _roomSessions[room.RoomId] = CreateNewSession(room);
+                    // 게임 세션 초기화
+                    _roomSessions[room.RoomId] = GameSessionUtils.CreateNewSession(room);
+
+                    // 타이머 초기화
+                    StartRoomTimer(room);
                 }
             }
             Console.WriteLine("[socket] Initialized 10 game rooms");
         }
 
-        public void ResetSession(Room room)
+        // 특정 룸의 타이머 시작
+        public void StartRoomTimer(Room room)
         {
-            // TODO: 룸 초기화 시 IsJackpot이 false이면 기존의 잭팟 금액 유지
-            // TODO: 잭팟이 터졌을 때 해당 룸 세션 초기화 기능 -> 다른 유저들에겐 TotalBetAmount의 10% 반환 후 페이아웃은 반환되지 않고 초기화
-            _roomSessions[room.RoomId] = CreateNewSession(room);
+            if (_roomTimers.ContainsKey(room.RoomId))
+            {
+                Console.WriteLine($"[socket] Timer for Room {room.RoomId} is already running.");
+                return;
+            }
+
+            Timer timer = new Timer(_ =>
+            {
+                // 잭팟이 터지거나 시간이 만료되면 초기화
+                _ = ResetRoomSession(room.RoomId);
+            }, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+
+            _roomTimers[room.RoomId] = timer;
+            Console.WriteLine($"[socket] Timer started for Room {room.RoomId}");
         }
 
-
-        // 인스턴스를 메서드 내에서 참조하지 않기 때문에 정적 메서드로 선언
-        public static GameSession CreateNewSession(Room room)
+        // 특정 룸의 타이머 중단
+        public void StopRoomTimer(int roomId)
         {
-            return new GameSession
+            if (_roomTimers.TryRemove(roomId, out var timer))
             {
-                TotalBetAmount = 0,
-                TotalUser = 0,
-                TotalJackpotAmount = 0,
-                IsJackpot = false,
-                TargetPayout = room.TargetPayout,
-                MaxBetAmount = room.MaxBetAmount,
-                MaxUser = room.MaxUser,
-                BaseJackpotAmount = room.BaseJackpotAmount,
-                CreatedAt = DateTime.UtcNow
-            };
+                timer.Dispose();
+                Console.WriteLine($"[socket] Timer stopped for Room {roomId}");
+            }
+            else
+            {
+                Console.WriteLine($"[socket] No active timer found for Room {roomId}");
+            }
+        }
+
+        // 특정 룸 초기화
+        // TODO: 룸 초기화 시 IsJackpot이 false이면 기존의 잭팟 금액 유지
+        // TODO: 잭팟이 터졌을 때 해당 룸 세션 초기화 기능 -> 다른 유저들에겐 TotalBetAmount의 10% 반환 후 페이아웃은 반환되지 않고 초기화
+        private async Task ResetRoomSession(int roomId)
+        {
+            Console.WriteLine($"[socket] Room {roomId}: Resetting session");
+
+            var session = GetGameSession(roomId);
+
+            if (session != null)
+            {
+                // 잭팟으로 인한 초기화 로직 추가 가능
+                var room = await _roomService.GetRoomByIdAsync(roomId);
+                if (room != null)
+                {
+                    // 룸 세션 초기화
+                    _roomSessions[room.RoomId] = GameSessionUtils.CreateNewSession(room);
+
+                    // 타이머를 재시작하거나 필요한 추가 작업 수행
+                    StopRoomTimer(roomId);
+                    StartRoomTimer(room);
+                }
+                else
+                {
+                    Console.WriteLine($"[socket] Room {roomId} does not exist in session data.");
+                }
+            }
         }
 
         public void IncrementTotalUser(int roomId)
         {
-            var session = GetSession(roomId);
+            var session = GetGameSession(roomId);
 
             if (session != null)
             {
-                session.TotalUser++;
-                Console.WriteLine($"[socket] Room {roomId}: Total users updated to {session.TotalUser}");
+                lock (_lock)
+                {
+                    session.TotalUser++;
+                    Console.WriteLine($"[socket] Room {roomId}: Total users updated to {session.TotalUser}");
+                }
             }
         }
 
-        public GameSession? GetSession(int roomId)
+        public GameSession? GetGameSession(int roomId)
         {
             _roomSessions.TryGetValue(roomId, out var session);
             return session;
