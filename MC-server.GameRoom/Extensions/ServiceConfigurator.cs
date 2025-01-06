@@ -1,8 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
+using MC_server.Core.Extensions;
 using MC_server.GameRoom.Handlers;
 using MC_server.GameRoom.Managers;
-using MC_server.Core.Extensions;
+using MC_server.GameRoom.Service;
 
 namespace MC_server.GameRoom.Extensions
 {
@@ -20,6 +21,7 @@ namespace MC_server.GameRoom.Extensions
             serviceCollection.AddSingleton<ClientManager>();
 
             serviceCollection.AddScoped<GameRoomHandler>();
+            serviceCollection.AddScoped<UserTcpService>();
 
             return serviceCollection.BuildServiceProvider();
         }

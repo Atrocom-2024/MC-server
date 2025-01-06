@@ -26,7 +26,7 @@ namespace MC_server.GameRoom.Service
             {
                 case "coins":
                     // 코인 업데이트
-                    if (value is long coinAmount)
+                    if (value is int coinAmount)
                     {
                         user.Coins += coinAmount;
                         Console.WriteLine($"[socket] Updated coins for user to {user.Coins}");

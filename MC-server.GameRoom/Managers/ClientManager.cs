@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 
 using MC_server.GameRoom.Models;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace MC_server.GameRoom.Managers
 {
@@ -27,9 +26,8 @@ namespace MC_server.GameRoom.Managers
             lock (_connectedClients)
             {
                 _connectedClients.Remove(client);
+                _clientStates.TryRemove(client, out _);
             }
-
-            _clientStates.TryRemove(client, out _);
         }
 
         public void AssignClientToGameRoom(TcpClient client, string userId, int roomId)
@@ -65,7 +63,7 @@ namespace MC_server.GameRoom.Managers
                         }
                         break;
                     case "userTotalBetAmount":
-                        if (value is long betAmount)
+                        if (value is int betAmount)
                         {
                             userState.UserTotalBetAmount += betAmount;
                             Console.WriteLine($"[socket] Updated UserTotalBetAmount for user to {userState.UserTotalBetAmount}");
