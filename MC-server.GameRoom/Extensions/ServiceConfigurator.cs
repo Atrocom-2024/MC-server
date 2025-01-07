@@ -21,6 +21,7 @@ namespace MC_server.GameRoom.Extensions
             serviceCollection.AddSingleton<ClientManager>();
 
             serviceCollection.AddScoped<GameRoomHandler>();
+            serviceCollection.AddScoped<ClientHandler>();
             serviceCollection.AddScoped<UserTcpService>();
 
             return serviceCollection.BuildServiceProvider();

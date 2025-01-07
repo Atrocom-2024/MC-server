@@ -1,9 +1,9 @@
 ﻿using System.Net.Sockets;
-using ProtoBuf;
 
 using MC_server.GameRoom.Models;
 using MC_server.GameRoom.Managers;
 using MC_server.GameRoom.Service;
+using MC_server.GameRoom.Utils;
 
 namespace MC_server.GameRoom.Handlers
 {
@@ -11,57 +11,54 @@ namespace MC_server.GameRoom.Handlers
     {
         private readonly GameRoomManager _gameRoomManager;
         private readonly ClientManager _clientManager;
+        private readonly ClientHandler _clientHandler;
 
         private readonly UserTcpService _userTcpService;
 
         // GameSession에 대한 동기화 제어를 위해 사용됨 -> 다수의 스레드가 동시에 GameSession을 읽거나 수정하려고 할 때 충돌을 방지
         private readonly object _sessionLock = new object();
 
-        public GameRoomHandler(GameRoomManager gameRoomManager, ClientManager clientManager, UserTcpService userTcpService)
+        public GameRoomHandler(GameRoomManager gameRoomManager, ClientManager clientManager, UserTcpService userTcpService, ClientHandler clientHandler)
         {
             _gameRoomManager = gameRoomManager ?? throw new ArgumentNullException(nameof(gameRoomManager));
             _clientManager = clientManager ?? throw new ArgumentNullException(nameof(clientManager));
             _userTcpService = userTcpService ?? throw new ArgumentNullException(nameof(userTcpService));
+            _clientHandler = clientHandler ?? throw new ArgumentNullException(nameof(_clientHandler));
         }
 
-        private static bool IsSocketConnected(Socket socket)
+        public async Task HandleGameRoomAsync(TcpClient client)
         {
-            try
-            {
-                return !(socket.Poll(1, SelectMode.SelectRead) && socket.Available == 0);
-            }
-            catch (SocketException)
-            {
-                return false;
-            }
-        }
-
-        public async Task HandleClientAsync(TcpClient client)
-        {
+            // TODO: 여기서 모든 요청을 처리하도록 수정해야 함. ClientHandler에서 처리하면 안됨.
             try
             {
                 var networkStream = client.GetStream(); // TCP 클라이언트의 네트워크 스트림을 가져옴
 
-                while (client.Connected && IsSocketConnected(client.Client))
+                while (client.Connected && SocketUtils.IsSocketConnected(client.Client))
                 {
                     // 클라이언트로부터 데이터를 비동기적으로 읽기
-                    var request = DeserializeProtobuf<ClientRequest>(networkStream);
+                    var request = ProtobufUtils.DeserializeProtobuf<ClientRequest>(networkStream);
 
                     // reqeust가 유효하고, 클라이언트가 특정 룸에 연결되어 있는 경우에만 통과
                     if (request != null) 
                     {
                         switch (request.RequestType)
                         {
-                            case "JoinRoom":
+                            case "JoinRoomRequest":
                                 if (request.JoinRoomData != null)
                                 {
                                     HandleJoinRoom(client, request.JoinRoomData);
                                 }
                                 break;
-                            case "Bet":
+                            case "BetRequest":
                                 if (request.BetData != null)
                                 {
                                     _ = HandleBetting(client, request.BetData);
+                                }
+                                break;
+                            case "AddCoinsRequest":
+                                if (request.AddCoinsData != null)
+                                {
+                                    _ = _clientHandler.HandleAddCoins(client, request.AddCoinsData);
                                 }
                                 break;
                             default:
@@ -73,7 +70,7 @@ namespace MC_server.GameRoom.Handlers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[socket] Error: {ex.Message}");
+                Console.WriteLine($"[socket] HandleGameRoomAsync Error: {ex.Message}");
             }
             finally
             {
@@ -93,7 +90,7 @@ namespace MC_server.GameRoom.Handlers
             {
                 Console.WriteLine($"Join User ID: {joinRequest.UserId}");
                 // 유저가 해당 룸에 Join 시 해당 룸에 유저 정보 등록
-                _clientManager.AssignClientToGameRoom(client, joinRequest.UserId, joinRequest.RoomId);
+                _clientManager.AddClient(client, joinRequest.UserId, joinRequest.RoomId);
                 Console.WriteLine($"[socket] Client assigned to Room {joinRequest.RoomId}");
 
                 // 유저가 해당 룸에 Join 할 때마다 해당 게임의 TotalUser + 1
@@ -109,7 +106,7 @@ namespace MC_server.GameRoom.Handlers
                         GameUserState = gameUserState
                     };
                     var networkStream = client.GetStream();
-                    byte[] serializeResponseData = SerializeProtobuf(responseData);
+                    byte[] serializeResponseData = ProtobufUtils.SerializeProtobuf(responseData);
                     networkStream.Write(serializeResponseData, 0, serializeResponseData.Length);
                     Console.WriteLine($"[socket] Sent user state to client: {joinRequest.UserId}");
                 }
@@ -136,12 +133,12 @@ namespace MC_server.GameRoom.Handlers
             {
                 int roomId = _clientManager.GetUserRoomId(client);
                 var userState = _clientManager.GetGameUserState(client);
-                var session = _gameRoomManager.GetGameSession(roomId);
+                var gameState = _gameRoomManager.GetGameSession(roomId);
 
-                if (session != null && userState != null)
+                if (gameState != null && userState != null)
                 {
                     // 유저의 코인 수 변경
-                    var updatedUser = await _userTcpService.UpdateUserAsync(userState.GameUserId, "coins", -betRequest.BetAmount);
+                    var updatedUser = await _userTcpService.UpdateUserAsync(userState.UserId, "coins", -betRequest.BetAmount);
 
                     if (updatedUser != null)
                     { 
@@ -149,8 +146,8 @@ namespace MC_server.GameRoom.Handlers
                         {
                             // 배팅 처리
                             _clientManager.UpdateGameUserState(client, "userTotalBetAmount", betRequest.BetAmount);// 배팅한 게임 유저 상태의 TotalBet을 수정
-                            session.TotalBetAmount += betRequest.BetAmount;
-                            session.TotalJackpotAmount += (long)Math.Round(betRequest.BetAmount * 0.1);
+                            gameState.TotalBetAmount += betRequest.BetAmount;
+                            gameState.TotalJackpotAmount += (long)Math.Round(betRequest.BetAmount * 0.1);
                         }
 
                         // 요청 클라이언트에게 응답 전송
@@ -159,14 +156,14 @@ namespace MC_server.GameRoom.Handlers
                             ResponseType = "BetResponse",
                             BetResponseData = new BetResponse { UpdatedCoins = updatedUser.Coins }
                         };
-                        byte[] responseData = SerializeProtobuf(response);
+                        byte[] responseData = ProtobufUtils.SerializeProtobuf(response);
                         var stream = client.GetStream();
                         await stream.WriteAsync(responseData, 0, responseData.Length);
                     }
-                    Console.WriteLine($"[socket] Room {roomId}: TotalBet = {session.TotalBetAmount}");
+                    Console.WriteLine($"[socket] Room {roomId}: TotalBet = {gameState.TotalBetAmount}");
 
                     // 변경된 세션 데이터 브로드캐스트
-                    BroadcastGameState(roomId, session);
+                    BroadcastGameState(roomId, gameState);
 
                     // 변경된 게임 유저 상태 브로드캐스트
                     BroadcaseGameUserState(roomId);
@@ -223,7 +220,7 @@ namespace MC_server.GameRoom.Handlers
             try
             {
                 // 응답 데이터 직렬화
-                byte[] responseData = SerializeProtobuf(response);
+                byte[] responseData = ProtobufUtils.SerializeProtobuf(response);
 
                 // 클라이언트들에게 데이터 전송
                 foreach (var client in clients)
@@ -246,20 +243,6 @@ namespace MC_server.GameRoom.Handlers
             {
                 Console.WriteLine($"[socket] General broadcast error: {ex.Message}");
             }
-        }
-
-        // 클래스의 인스턴스 데이터나 필드를 참조하지 않기 때문에, 해당 메서드는 인스턴스 메서드일 필요가 없음
-        // 정적 메서드는 인스턴스 메서드보다 메모리를 덜 사용
-        private static byte[] SerializeProtobuf<Task>(Task obj)
-        {
-            using var memoryStream = new MemoryStream();
-            Serializer.SerializeWithLengthPrefix(memoryStream, obj, PrefixStyle.Base128);
-            return memoryStream.ToArray();
-        }
-
-        private static T DeserializeProtobuf<T>(NetworkStream networkStream)
-        {
-            return Serializer.DeserializeWithLengthPrefix<T>(networkStream, PrefixStyle.Base128);
         }
     }
 }

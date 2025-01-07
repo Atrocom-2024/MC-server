@@ -7,42 +7,28 @@ namespace MC_server.GameRoom.Managers
 {
     public class ClientManager
     {
-        // 현재 연결된 모든 클라이언트를 관리하는 리스트
-        private static readonly List<TcpClient> _connectedClients = new List<TcpClient>();
-
-        // 각 클라이언트가 어느 룸에 연결되어 있는지 추적 -> 키는 클라이언트 객체, 값은 해당 클라이언트가 속한 룸의 id
+        // 현재 연결된 모든 클라이언트를 관리, 각 클라이언트가 어느 룸에 연결되어 있는지 추적 -> 키는 클라이언트 객체, 값은 해당 클라이언트가 속한 룸의 id
         private readonly ConcurrentDictionary<TcpClient, GameUserState> _clientStates = new ConcurrentDictionary<TcpClient, GameUserState>();
 
-        public void AddClient(TcpClient client)
-        {
-            lock (_connectedClients)
-            {
-                _connectedClients.Add(client);
-            }
-        }
-
-        public void RemoveClient(TcpClient client)
-        {
-            lock (_connectedClients)
-            {
-                _connectedClients.Remove(client);
-                _clientStates.TryRemove(client, out _);
-            }
-        }
-
-        public void AssignClientToGameRoom(TcpClient client, string userId, int roomId)
+        public void AddClient(TcpClient client, string userId, int roomId)
         {
             var userState = new GameUserState
             {
-                GameUserId = userId,
+                UserId = userId,
                 RoomId = roomId,
                 CurrentPayout = 0.0M,
+                UserTotalProfit = 0,
                 UserTotalBetAmount = 0,
                 JackpotProb = 0.1M
             };
 
             // _clientStates에 동일한 TcpClient 키를 덮어쓸 경우 예기치 않은 동작이 발생할 수 있어 메서드를 통한 추가
             _clientStates.AddOrUpdate(client, userState, (key, existingValue) => userState);
+        }
+
+        public void RemoveClient(TcpClient client)
+        {
+            _clientStates.TryRemove(client, out _);
         }
 
         public void UpdateGameUserState(TcpClient client, string property, object value)
@@ -60,6 +46,17 @@ namespace MC_server.GameRoom.Managers
                         else
                         {
                             throw new ArgumentException("Invalid value type for CurrentPayout.");
+                        }
+                        break;
+                    case "userTotalProfit":
+                        if (value is int addCoinsAmount)
+                        {
+                            userState.UserTotalProfit += addCoinsAmount;
+                            Console.WriteLine($"[socket] Updated UserTotalProfit for user to {userState.UserTotalProfit}");
+                        }
+                        else
+                        {
+                            throw new ArgumentException("Invalid value type for UserTotalProfit.");
                         }
                         break;
                     case "userTotalBetAmount":
