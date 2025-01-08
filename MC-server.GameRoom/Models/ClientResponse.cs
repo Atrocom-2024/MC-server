@@ -12,7 +12,7 @@ namespace MC_server.GameRoom.Models
         public GameUserState? GameUserState { get; set; }
 
         [ProtoMember(3)]
-        public GameSession? GameState { get; set; }
+        public GameState? GameState { get; set; }
 
         [ProtoMember(4)]
         public BetResponse? BetResponseData { get; set; }

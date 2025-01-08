@@ -1,9 +1,9 @@
 ﻿using System.Collections.Concurrent;
 
-using MC_server.GameRoom.Models;
+using MC_server.GameRoom.Managers.Models;
+using MC_server.GameRoom.Utils;
 using MC_server.Core.Models;
 using MC_server.Core.Services;
-using MC_server.GameRoom.Utils;
 
 namespace MC_server.GameRoom.Managers
 {
@@ -119,9 +119,15 @@ namespace MC_server.GameRoom.Managers
             }
         }
 
-        public GameSession? GetGameSession(int roomId)
+        public GameSession GetGameSession(int roomId)
         {
             _roomSessions.TryGetValue(roomId, out var session);
+
+            if (session == null)
+            {
+                throw new Exception($"[socket] Room {roomId} does not exist in session data.");
+            }
+
             return session;
         }
 

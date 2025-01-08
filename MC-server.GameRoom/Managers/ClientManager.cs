@@ -1,18 +1,18 @@
 ﻿using System.Net.Sockets;
 using System.Collections.Concurrent;
 
-using MC_server.GameRoom.Models;
+using MC_server.GameRoom.Managers.Models;
 
 namespace MC_server.GameRoom.Managers
 {
     public class ClientManager
     {
         // 현재 연결된 모든 클라이언트를 관리, 각 클라이언트가 어느 룸에 연결되어 있는지 추적 -> 키는 클라이언트 객체, 값은 해당 클라이언트가 속한 룸의 id
-        private readonly ConcurrentDictionary<TcpClient, GameUserState> _clientStates = new ConcurrentDictionary<TcpClient, GameUserState>();
+        private readonly ConcurrentDictionary<TcpClient, GameUser> _clientStates = new ConcurrentDictionary<TcpClient, GameUser>();
 
         public void AddClient(TcpClient client, string userId, int roomId)
         {
-            var userState = new GameUserState
+            var userState = new GameUser
             {
                 UserId = userId,
                 RoomId = roomId,
@@ -92,7 +92,7 @@ namespace MC_server.GameRoom.Managers
         }
 
         // 특정 클라이언트의 정보를 반환하는 메서드
-        public GameUserState GetGameUserState(TcpClient client)
+        public GameUser GetGameUserState(TcpClient client)
         {
             if (_clientStates.TryGetValue(client, out var userState))
             {
@@ -119,7 +119,7 @@ namespace MC_server.GameRoom.Managers
             return _clientStates.Where(pair => pair.Value.RoomId == roomId).Select(pair => pair.Key);
         }
         
-        public ConcurrentDictionary<TcpClient, GameUserState> GetAllClients()
+        public ConcurrentDictionary<TcpClient, GameUser> GetAllClients()
         {
             return _clientStates;
         }

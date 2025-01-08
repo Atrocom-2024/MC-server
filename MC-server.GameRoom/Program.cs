@@ -15,15 +15,13 @@ namespace MC_server.GameRoom
         // 의존성 필드 선언
         private readonly ClientManager _clientManager;
         private readonly GameRoomManager _gameRoomManager;
-        private readonly ClientHandler _clientHandler;
         private readonly GameRoomHandler _gameRoomHandler;
 
         // 의존성 주입 생성자
-        public Program(ClientManager clientManager, GameRoomManager gameRoomManager, ClientHandler clientHandler, GameRoomHandler gameRoomHandler)
+        public Program(ClientManager clientManager, GameRoomManager gameRoomManager, GameRoomHandler gameRoomHandler)
         {
             _clientManager = clientManager ?? throw new ArgumentNullException(nameof(clientManager));
             _gameRoomManager = gameRoomManager ?? throw new ArgumentNullException(nameof(gameRoomManager));
-            _clientHandler = clientHandler ?? throw new ArgumentNullException(nameof(clientHandler));
             _gameRoomHandler = gameRoomHandler ?? throw new ArgumentNullException(nameof(gameRoomHandler));
         }
 
@@ -65,9 +63,6 @@ namespace MC_server.GameRoom
 
                     // 4. 게임 룸 처리 시작
                     _ = _gameRoomHandler.HandleGameRoomAsync(client);
-
-                    // 5. 게임 클라이언트 처리 시작
-                    //_ = _clientHandler.HandleClientAsync(client);
                 }
                 catch (Exception ex)
                 {

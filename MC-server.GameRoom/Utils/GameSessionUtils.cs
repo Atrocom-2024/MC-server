@@ -1,6 +1,5 @@
-﻿using MC_server.Core.Models;
-using MC_server.GameRoom.Models;
-using System.Collections.Concurrent;
+﻿using MC_server.GameRoom.Managers.Models;
+using MC_server.Core.Models;
 
 namespace MC_server.GameRoom.Utils
 {

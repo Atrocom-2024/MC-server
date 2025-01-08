@@ -3,12 +3,12 @@
 namespace MC_server.GameRoom.Models
 {
     [ProtoContract]
-    public class GameUserState
+    public class GameState
     {
         [ProtoMember(1)]
-        public decimal CurrentPayout { get; set; }
+        public long TotalJackpotAmount { get; set; }
 
         [ProtoMember(2)]
-        public decimal JackpotProb { get; set; }
+        public bool IsJackpot { get; set; }
     }
 }
