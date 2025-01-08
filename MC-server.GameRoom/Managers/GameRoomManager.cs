@@ -79,6 +79,7 @@ namespace MC_server.GameRoom.Managers
         private async Task ResetRoomSession(int roomId)
         {
             // TODO: 룸 초기화 시 해당 룸에 접속 중인 ClientManager의 _clientStates도 초기화가 되어야 함.
+            // TODO: 룸 초기화 시 현재 접속중인 유저를 유지시키면서 세션을 재생성해야함
             // TODO: 룸 초기화 시 IsJackpot이 false이면 기존의 잭팟 금액 유지
             // TODO: 잭팟이 터졌을 때 해당 룸 세션 초기화 기능 -> 다른 유저들에겐 TotalBetAmount의 10% 반환 후 페이아웃은 반환되지 않고 초기화
             Console.WriteLine($"[socket] Room {roomId}: Resetting session");

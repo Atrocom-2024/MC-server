@@ -6,9 +6,8 @@ namespace MC_server.GameRoom.Utils
     {
         public static decimal CalculatePayout(GameUser gameUser, GameSession gameSession)
         {
-            Console.WriteLine($"현재 {gameUser.RoomId}번 방 접속 유저 수: {gameSession.TotalUser}");
             var adjustedProb = ((gameSession.TargetPayout - gameUser.CurrentPayout) / 2);
-            var part_A = (adjustedProb * (gameUser.UserTotalBetAmount / gameSession.MaxBetAmount) + adjustedProb * (gameSession.TotalUser / gameSession.MaxUser));
+            var part_A = (adjustedProb * ((decimal)gameUser.UserTotalBetAmount / gameSession.MaxBetAmount) + adjustedProb * ((decimal)gameSession.TotalUser / gameSession.MaxUser));
 
             return part_A;
         }

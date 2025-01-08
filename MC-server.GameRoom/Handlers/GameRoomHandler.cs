@@ -4,6 +4,7 @@ using MC_server.GameRoom.Models;
 using MC_server.GameRoom.Managers;
 using MC_server.GameRoom.Service;
 using MC_server.GameRoom.Utils;
+using System.Diagnostics;
 
 namespace MC_server.GameRoom.Handlers
 {
@@ -49,13 +50,13 @@ namespace MC_server.GameRoom.Handlers
                             case "BetRequest":
                                 if (request.BetData != null)
                                 {
-                                    _ = HandleBetting(client, request.BetData);
+                                    await HandleBetting(client, request.BetData);
                                 }
                                 break;
                             case "AddCoinsRequest":
                                 if (request.AddCoinsData != null)
                                 {
-                                    _ = HandleAddCoins(client, request.AddCoinsData);
+                                    await HandleAddCoins(client, request.AddCoinsData);
                                 }
                                 break;
                             default:
@@ -82,7 +83,6 @@ namespace MC_server.GameRoom.Handlers
 
         private void HandleJoinRoom(TcpClient client, JoinRoomRequest joinRequest)
         {
-            // TODO: 유저가 해당 룸에 Join 할 때마다 모든 유저의 페이아웃을 재계산 후 브로드캐스트 기능
             try
             {
                 Console.WriteLine($"Join User ID: {joinRequest.UserId}");
@@ -141,8 +141,10 @@ namespace MC_server.GameRoom.Handlers
                     lock (_sessionLock) // GameSession 업데이트 보호
                     {
                         // 배팅 처리
+                        var newPayout = GameUserStateUtils.CalculatePayout(userState, gameSession);
+                        Console.WriteLine($"payout 재계산됨 {newPayout}");
+                        _clientManager.UpdateGameUserState(client, "currentPayout", newPayout); // 해당 유저의 페이아웃 재계산
                         _clientManager.UpdateGameUserState(client, "userTotalBetAmount", betRequest.BetAmount);// 배팅한 게임 유저의 총 배팅 금액을 수정
-                        _clientManager.UpdateGameUserState(client, "currentPayout", GameUserStateUtils.CalculatePayout(userState, gameSession)); // 해당 유저의 페이아웃 수정
                         gameSession.TotalBetAmount += betRequest.BetAmount; // 해당 룸의 총 배팅 금액 변경
                         gameSession.TotalJackpotAmount += (long)Math.Round(betRequest.BetAmount * 0.1); // 배팅 금액의 10%만큼 잭팟 금액에 누적
                     }

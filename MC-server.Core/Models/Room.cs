@@ -11,7 +11,7 @@ namespace MC_server.Core.Models
         [Column("room_id")]
         public int RoomId { get; set; }
 
-        [Column("target_payout", TypeName = "decimal(6, 3)")]
+        [Column("target_payout", TypeName = "decimal(10, 7)")]
         public decimal TargetPayout { get; set; }
 
         [Column("max_bet_amount")]
