@@ -4,6 +4,8 @@ using MC_server.GameRoom.Managers.Models;
 using MC_server.GameRoom.Utils;
 using MC_server.Core.Models;
 using MC_server.Core.Services;
+using MC_server.GameRoom.Service;
+using MC_server.GameRoom.Models;
 
 namespace MC_server.GameRoom.Managers
 {
@@ -15,13 +17,15 @@ namespace MC_server.GameRoom.Managers
         private readonly ConcurrentDictionary<int, Timer> _roomTimers = new ConcurrentDictionary<int, Timer>();
 
         private readonly ClientManager _clientManager;
+        private readonly UserTcpService _userTcpService;
         private readonly RoomService _roomService;
 
         private readonly object _lock = new object();
 
-        public GameRoomManager(ClientManager clientManager, RoomService roomService)
+        public GameRoomManager(ClientManager clientManager, UserTcpService userTcpService, RoomService roomService)
         {
             _clientManager = clientManager ?? throw new ArgumentNullException(nameof(clientManager));
+            _userTcpService = userTcpService ?? throw new ArgumentNullException(nameof(clientManager));
             _roomService = roomService ?? throw new ArgumentNullException(nameof(roomService));
         }
 
@@ -108,6 +112,8 @@ namespace MC_server.GameRoom.Managers
                     }
                     Console.WriteLine($"[socket] Room TotalUser {_roomSessions[room.RoomId].TotalUser}");
 
+                    await ReturnPayout(roomId);
+
                     // 게임 유저 초기화
                     foreach (var client in clientsInRoom)
                     {
@@ -125,6 +131,29 @@ namespace MC_server.GameRoom.Managers
                 else
                 {
                     Console.WriteLine($"[socket] Room {roomId} does not exist in session data.");
+                }
+            }
+        }
+
+        private async Task ReturnPayout(int roomId)
+        {
+            var clientsInRoom = _clientManager.GetClientsInRoom(roomId);
+
+            foreach (var client in clientsInRoom)
+            {
+                var gameUser = _clientManager.GetGameUser(client);
+                var updatedUser = await _userTcpService.UpdateUserAsync(gameUser.UserId, "coins", (int)(gameUser.UserTotalBetAmount * gameUser.CurrentPayout));
+
+                if (updatedUser != null)
+                {
+                    var response = new ClientResponse
+                    {
+                        ResponseType = "AddCoinsResponse",
+                        AddCoinsResponseData = new AddCoinsResponse { AddedCoinsAmount = updatedUser.Coins }
+                    };
+                    byte[] responseData = ProtobufUtils.SerializeProtobuf(response);
+                    var stream = client.GetStream();
+                    await stream.WriteAsync(responseData, 0, responseData.Length);
                 }
             }
         }

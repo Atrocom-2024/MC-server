@@ -124,7 +124,7 @@ namespace MC_server.GameRoom.Handlers
 
         private async Task HandleBetting(TcpClient client, BetRequest betRequest)
         {
-            // TODO: TotalBetAmount가 MaxBetAmount를 초과할 때는 모든 유저들에게 페이아웃 반환하고 모든 유저의 페이아웃 초기화
+            // TODO: TotalBetAmount가 MaxBetAmount를 초과할 때는 모든 유저들에게 페이아웃 반환하고 모든 유저의 페이아웃 초기화 후 세션 초기화
             // TODO: TotalBetAmount에 따라 해당 유저의 잭팟 확률을 조정하는 기능
             try
             {
@@ -179,7 +179,7 @@ namespace MC_server.GameRoom.Handlers
             }
         }
 
-        public async Task HandleAddCoins(TcpClient client, AddCoinsRequest addCoinsRequest)
+        private async Task HandleAddCoins(TcpClient client, AddCoinsRequest addCoinsRequest)
         {
             // TODO: 유저가 받은 이익이 유저 자본의 10% 이상이 되면 Payout 초기화
             try
