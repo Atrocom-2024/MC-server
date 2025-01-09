@@ -4,7 +4,6 @@ using MC_server.GameRoom.Models;
 using MC_server.GameRoom.Managers;
 using MC_server.GameRoom.Service;
 using MC_server.GameRoom.Utils;
-using System.Diagnostics;
 
 namespace MC_server.GameRoom.Handlers
 {
@@ -100,13 +99,14 @@ namespace MC_server.GameRoom.Handlers
                 // 4. 해당 룸에 접속 중인 클라이언트들의 payout 변경
                 foreach (var gameUserClient in clientsInRoom)
                 {
-                    var gameUser = _clientManager.GetGameUserState(gameUserClient);
-                    _clientManager.UpdateGameUserState(client, "currentPayout", GameUserStateUtils.CalculatePayout(gameUser, gameSession));
+                    var gameUser = _clientManager.GetGameUser(gameUserClient);
+                    _clientManager.UpdateGameUser(client, "currentPayout", GameUserStateUtils.CalculatePayout(gameUser, gameSession));
                 }
 
                 // 5. 유저 상태 브로드캐스트
                 BroadcaseGameUserState(joinRequest.RoomId);
 
+                Console.WriteLine($"Jackpot amount is {gameSession.TotalJackpotAmount}");
                 // 6. 게임 상태 브로드캐스트
                 var gameState = new GameState
                 {
@@ -125,26 +125,25 @@ namespace MC_server.GameRoom.Handlers
         private async Task HandleBetting(TcpClient client, BetRequest betRequest)
         {
             // TODO: TotalBetAmount가 MaxBetAmount를 초과할 때는 모든 유저들에게 페이아웃 반환하고 모든 유저의 페이아웃 초기화
-            // TODO: 해당 유저의 페이아웃 재계산 기능
             // TODO: TotalBetAmount에 따라 해당 유저의 잭팟 확률을 조정하는 기능
             try
             {
                 int roomId = _clientManager.GetUserRoomId(client);
-                var userState = _clientManager.GetGameUserState(client);
+                var gameUser = _clientManager.GetGameUser(client);
                 var gameSession = _gameRoomManager.GetGameSession(roomId);
                 
                 // 유저의 코인 수 변경
-                var updatedUser = await _userTcpService.UpdateUserAsync(userState.UserId, "coins", -betRequest.BetAmount);
+                var updatedUser = await _userTcpService.UpdateUserAsync(gameUser.UserId, "coins", -betRequest.BetAmount);
 
                 if (updatedUser != null)
                 { 
                     lock (_sessionLock) // GameSession 업데이트 보호
                     {
                         // 배팅 처리
-                        var newPayout = GameUserStateUtils.CalculatePayout(userState, gameSession);
+                        var newPayout = GameUserStateUtils.CalculatePayout(gameUser, gameSession);
                         Console.WriteLine($"payout 재계산됨 {newPayout}");
-                        _clientManager.UpdateGameUserState(client, "currentPayout", newPayout); // 해당 유저의 페이아웃 재계산
-                        _clientManager.UpdateGameUserState(client, "userTotalBetAmount", betRequest.BetAmount);// 배팅한 게임 유저의 총 배팅 금액을 수정
+                        _clientManager.UpdateGameUser(client, "currentPayout", newPayout); // 해당 유저의 페이아웃 재계산
+                        _clientManager.UpdateGameUser(client, "userTotalBetAmount", betRequest.BetAmount);// 배팅한 게임 유저의 총 배팅 금액을 수정
                         gameSession.TotalBetAmount += betRequest.BetAmount; // 해당 룸의 총 배팅 금액 변경
                         gameSession.TotalJackpotAmount += (long)Math.Round(betRequest.BetAmount * 0.1); // 배팅 금액의 10%만큼 잭팟 금액에 누적
                     }
@@ -193,7 +192,7 @@ namespace MC_server.GameRoom.Handlers
                     lock (_sessionLock)
                     {
                         // 코인 추가 처리
-                        _clientManager.UpdateGameUserState(client, "userTotalProfit", addCoinsRequest.AddCoinsAmount);
+                        _clientManager.UpdateGameUser(client, "userTotalProfit", addCoinsRequest.AddCoinsAmount);
                     }
                     // 요청 클라이언트에게 응답 전송
                     var response = new ClientResponse
@@ -240,7 +239,7 @@ namespace MC_server.GameRoom.Handlers
 
             foreach (var client in clientsInRoom)
             {
-                var gameUser = _clientManager.GetGameUserState(client);
+                var gameUser = _clientManager.GetGameUser(client);
                 var responseData = new ClientResponse
                 {
                     ResponseType = "GameUserState",

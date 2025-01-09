@@ -12,7 +12,7 @@ namespace MC_server.GameRoom.Utils
             {
                 TotalBetAmount = 0,
                 TotalUser = 0,
-                TotalJackpotAmount = 0,
+                TotalJackpotAmount = room.BaseJackpotAmount,
                 IsJackpot = false,
                 TargetPayout = room.TargetPayout,
                 MaxBetAmount = room.MaxBetAmount,

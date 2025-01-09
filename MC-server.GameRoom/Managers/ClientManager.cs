@@ -12,7 +12,7 @@ namespace MC_server.GameRoom.Managers
 
         public void AddClient(TcpClient client, string userId, int roomId)
         {
-            var userState = new GameUser
+            var gameUser = new GameUser
             {
                 UserId = userId,
                 RoomId = roomId,
@@ -23,7 +23,7 @@ namespace MC_server.GameRoom.Managers
             };
 
             // _clientStates에 동일한 TcpClient 키를 덮어쓸 경우 예기치 않은 동작이 발생할 수 있어 메서드를 통한 추가
-            _clientStates.AddOrUpdate(client, userState, (key, existingValue) => userState);
+            _clientStates.AddOrUpdate(client, gameUser, (key, existingValue) => gameUser);
         }
 
         public void RemoveClient(TcpClient client)
@@ -31,17 +31,17 @@ namespace MC_server.GameRoom.Managers
             _clientStates.TryRemove(client, out _);
         }
 
-        public void UpdateGameUserState(TcpClient client, string property, object value)
+        public void UpdateGameUser(TcpClient client, string property, object value)
         {
-            if (_clientStates.TryGetValue(client, out var userState))
+            if (_clientStates.TryGetValue(client, out var gameUser))
             {
                 switch (property)
                 {
                     case "currentPayout":
                         if (value is decimal newPayout)
                         {
-                            userState.CurrentPayout = newPayout;
-                            Console.WriteLine($"[socket] Updated CurrentPayout for user to {userState.CurrentPayout}");
+                            gameUser.CurrentPayout = newPayout;
+                            Console.WriteLine($"[socket] Updated CurrentPayout for user to {gameUser.CurrentPayout}");
                         }
                         else
                         {
@@ -51,8 +51,8 @@ namespace MC_server.GameRoom.Managers
                     case "userTotalProfit":
                         if (value is int addCoinsAmount)
                         {
-                            userState.UserTotalProfit += addCoinsAmount;
-                            Console.WriteLine($"[socket] Updated UserTotalProfit for user to {userState.UserTotalProfit}");
+                            gameUser.UserTotalProfit += addCoinsAmount;
+                            Console.WriteLine($"[socket] Updated UserTotalProfit for user to {gameUser.UserTotalProfit}");
                         }
                         else
                         {
@@ -62,8 +62,8 @@ namespace MC_server.GameRoom.Managers
                     case "userTotalBetAmount":
                         if (value is int betAmount)
                         {
-                            userState.UserTotalBetAmount += betAmount;
-                            Console.WriteLine($"[socket] Updated UserTotalBetAmount for user to {userState.UserTotalBetAmount}");
+                            gameUser.UserTotalBetAmount += betAmount;
+                            Console.WriteLine($"[socket] Updated UserTotalBetAmount for user to {gameUser.UserTotalBetAmount}");
                         }
                         else
                         {
@@ -73,8 +73,8 @@ namespace MC_server.GameRoom.Managers
                     case "jackpotProb":
                         if (value is decimal newJackpotProb)
                         {
-                            userState.JackpotProb = newJackpotProb;
-                            Console.WriteLine($"[socket] Updated JackpotProb for user to {userState.JackpotProb}");
+                            gameUser.JackpotProb = newJackpotProb;
+                            Console.WriteLine($"[socket] Updated JackpotProb for user to {gameUser.JackpotProb}");
                         }
                         else
                         {
@@ -92,11 +92,11 @@ namespace MC_server.GameRoom.Managers
         }
 
         // 특정 클라이언트의 정보를 반환하는 메서드
-        public GameUser GetGameUserState(TcpClient client)
+        public GameUser GetGameUser(TcpClient client)
         {
-            if (_clientStates.TryGetValue(client, out var userState))
+            if (_clientStates.TryGetValue(client, out var gameUser))
             {
-                return userState;
+                return gameUser;
             }
 
             throw new InvalidOperationException("Client not found or not assigned to any room.");
@@ -105,9 +105,9 @@ namespace MC_server.GameRoom.Managers
         // 특정 클라이언트가 어떤 룸에 참여 중인지 반환하는 메서드
         public int GetUserRoomId(TcpClient client)
         {
-            if (_clientStates.TryGetValue(client, out var userState))
+            if (_clientStates.TryGetValue(client, out var gameUser))
             {
-                return userState.RoomId;
+                return gameUser.RoomId;
             }
 
             throw new InvalidOperationException("Client not assigned to any room.");
