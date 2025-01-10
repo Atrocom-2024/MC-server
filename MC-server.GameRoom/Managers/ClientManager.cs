@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 
 using MC_server.GameRoom.Managers.Models;
+using MC_server.GameRoom.Utils;
 
 namespace MC_server.GameRoom.Managers
 {
@@ -88,6 +89,20 @@ namespace MC_server.GameRoom.Managers
             else
             {
                 throw new InvalidOperationException("Client not found or not assigned to any room.");
+            }
+        }
+
+        public void ResetGameUser(TcpClient client, GameSession gameSession)
+        {
+            if (_clientStates.TryGetValue(client, out var gameUser))
+            {
+                gameUser.CurrentPayout = 0M;
+                gameUser.UserTotalProfit = 0;
+                gameUser.UserTotalBetAmount = 0;
+                gameUser.JackpotProb = 0.1M;
+
+                var newPayout = GameUserStateUtils.CalculatePayout(gameUser, gameSession);
+                UpdateGameUser(client, "currentPayout", newPayout);
             }
         }
 

@@ -232,7 +232,7 @@ namespace MC_server.GameRoom.Handlers
             }
         }
 
-        private void BroadcaseGameUserState(int roomId)
+        public void BroadcaseGameUserState(int roomId)
         {
             // 2. 해당 룸에 연결된 클라이언트 가져오기
             var clientsInRoom = _clientManager.GetClientsInRoom(roomId);
