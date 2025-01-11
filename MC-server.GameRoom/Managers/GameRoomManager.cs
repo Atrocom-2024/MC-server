@@ -181,11 +181,8 @@ namespace MC_server.GameRoom.Managers
 
             if (gameSession != null)
             {
-                lock (_lock)
-                {
-                    gameSession.TotalUser++;
-                    Console.WriteLine($"[socket] Room {roomId}: Total users updated to {gameSession.TotalUser}");
-                }
+                gameSession.TotalUser++;
+                Console.WriteLine($"[socket] Room {roomId}: Total users updated to {gameSession.TotalUser}");
             }
         }
 

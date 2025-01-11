@@ -156,7 +156,8 @@ namespace MC_server.GameRoom.Handlers
                     };
                     byte[] responseData = ProtobufUtils.SerializeProtobuf(response);
                     var stream = client.GetStream();
-                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                    stream.Write(responseData, 0, responseData.Length);
+                    stream.Flush();
                 }
                 Console.WriteLine($"[socket] Room {roomId}: TotalBet = {gameSession.TotalBetAmount}");
 
@@ -202,7 +203,8 @@ namespace MC_server.GameRoom.Handlers
                     };
                     byte[] responseData = ProtobufUtils.SerializeProtobuf(response);
                     var stream = client.GetStream();
-                    await stream.WriteAsync(responseData, 0, responseData.Length);
+                    stream.Write(responseData, 0, responseData.Length);
+                    stream.Flush();
                 }
                 Console.WriteLine($"[socket] User Coins Added {addCoinsRequest.AddCoinsAmount}");
             }
@@ -271,6 +273,7 @@ namespace MC_server.GameRoom.Handlers
                         {
                             var stream = client.GetStream();
                             stream.Write(responseData, 0, responseData.Length);
+                            stream.Flush();
                         }
                     }
                     catch (Exception ex)
