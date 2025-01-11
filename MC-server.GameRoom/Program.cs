@@ -31,10 +31,6 @@ namespace MC_server.GameRoom
             var envPath = Path.Combine(AppContext.BaseDirectory, ".env");
             Env.Load(envPath);
 
-            Console.WriteLine($"DB_HOST: {Environment.GetEnvironmentVariable("DB_HOST")}");
-            Console.WriteLine($"DB_USERNAME: {Environment.GetEnvironmentVariable("DB_USER")}");
-            Console.WriteLine($"DB_PASSWORD: {Environment.GetEnvironmentVariable("DB_PASSWORD")}");
-
             // 1. 서비스 구성
             var serviceProvider = ServiceConfigurator.ConfigureServices();
 
