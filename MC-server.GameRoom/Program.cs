@@ -27,10 +27,12 @@ namespace MC_server.GameRoom
 
         public static async Task Main(string[] args)
         {
-            Env.Load();
+            // 실행 파일의 경로를 기반으로 .env 파일 로드
+            var envPath = Path.Combine(AppContext.BaseDirectory, ".env");
+            Env.Load(envPath);
 
             Console.WriteLine($"DB_HOST: {Environment.GetEnvironmentVariable("DB_HOST")}");
-            Console.WriteLine($"DB_USER: {Environment.GetEnvironmentVariable("DB_USER")}");
+            Console.WriteLine($"DB_USERNAME: {Environment.GetEnvironmentVariable("DB_USER")}");
             Console.WriteLine($"DB_PASSWORD: {Environment.GetEnvironmentVariable("DB_PASSWORD")}");
 
             // 1. 서비스 구성
