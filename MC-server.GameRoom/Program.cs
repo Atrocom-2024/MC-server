@@ -29,6 +29,10 @@ namespace MC_server.GameRoom
         {
             Env.Load();
 
+            Console.WriteLine($"DB_HOST: {Environment.GetEnvironmentVariable("DB_HOST")}");
+            Console.WriteLine($"DB_USER: {Environment.GetEnvironmentVariable("DB_USER")}");
+            Console.WriteLine($"DB_PASSWORD: {Environment.GetEnvironmentVariable("DB_PASSWORD")}");
+
             // 1. 서비스 구성
             var serviceProvider = ServiceConfigurator.ConfigureServices();
 
