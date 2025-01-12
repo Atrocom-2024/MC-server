@@ -1,5 +1,4 @@
 using DotNetEnv;
-using MC_server.Core;
 using MC_server.Core.Extensions;
 using MC_server.API.Extensions;
 
@@ -9,7 +8,9 @@ namespace MC_server.API
     {
         public static void Main(string[] args)
         {
-            Env.Load();
+            // 실행 파일 경로를 기반으로 .env 파일 로드
+            var envPath = Path.Combine(AppContext.BaseDirectory, ".env");
+            Env.Load(envPath);
 
             var builder = WebApplication.CreateBuilder(args);
 
