@@ -39,12 +39,7 @@ namespace MC_server.API.Controllers
             try
             {
                 // UserApiService 호출
-                User createdUser = (User)await _userApiService.CreateUserAsync(
-                    request.UserId,
-                    request.Provider,
-                    request.Email,
-                    request.Name
-                );
+                User createdUser = (User)await _userApiService.CreateUserAsync(request);
 
                 return CreatedAtAction(nameof(GetUserById), new { userId = createdUser.UserId }, createdUser);
             }

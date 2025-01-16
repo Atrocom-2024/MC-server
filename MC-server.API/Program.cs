@@ -1,6 +1,7 @@
 using DotNetEnv;
-using MC_server.Core.Extensions;
+
 using MC_server.API.Extensions;
+using MC_server.Core.Extensions;
 
 namespace MC_server.API
 {
