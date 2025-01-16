@@ -46,19 +46,19 @@ namespace MC_server.API.Services
                 throw new InvalidOperationException($"User with ID '{request.UserId}' already exists.");
             }
 
-            if (request.Provider == "google" && request.DeviceId != null)
-            {
-                User? googleUser = await _userService.GetUserByIdAsync(request.DeviceId);
+            //if (request.Provider == "google" && request.DeviceId != null)
+            //{
+            //    User? googleUser = await _userService.GetUserByIdAsync(request.DeviceId);
 
-                if (googleUser != null)
-                {
-                    googleUser.UserId = request.UserId;
-                    googleUser.Provider = request.Provider;
+            //    if (googleUser != null)
+            //    {
+            //        googleUser.UserId = request.UserId;
+            //        googleUser.Provider = request.Provider;
 
-                    // 변경 사항 저장
-                    return await _userService.UpdateUserAsync(googleUser);
-                }
-            }
+            //        // 변경 사항 저장
+            //        return await _userService.UpdateUserAsync(googleUser);
+            //    }
+            //}
 
             // 유저 생성
             User user = new User
