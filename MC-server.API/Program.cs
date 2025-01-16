@@ -9,9 +9,8 @@ namespace MC_server.API
     {
         public static void Main(string[] args)
         {
-            // 실행 파일 경로를 기반으로 .env 파일 로드
-            var envPath = Path.Combine(AppContext.BaseDirectory, ".env");
-            Env.Load(envPath);
+            // .env 파일 로드
+            Env.Load();
 
             var builder = WebApplication.CreateBuilder(args);
 
