@@ -102,10 +102,10 @@ namespace MC_server.API.Services
             }
 
             // 코인 업데이트
-            if (request.Coins.HasValue)
+            if (request.AddCoins.HasValue)
             {
-                user.Coins = request.Coins.Value;
-                updatedFields["coins"] = request.Coins.Value;
+                user.Coins += request.AddCoins.Value;
+                updatedFields["addCoins"] = user.Coins;
             }
 
             // 레벨 업데이트

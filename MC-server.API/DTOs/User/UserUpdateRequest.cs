@@ -3,7 +3,7 @@
     public class UserUpdateRequest
     {
         public string? Nickname { get; set; }
-        public long? Coins { get; set; }
+        public int? AddCoins { get; set; }
         public int? Level { get; set; }
         public long? Experience { get; set; }
 

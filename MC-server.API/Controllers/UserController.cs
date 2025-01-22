@@ -1,21 +1,19 @@
-﻿using MC_server.API.DTOs.User;
+﻿using Microsoft.AspNetCore.Mvc;
+
+using MC_server.API.DTOs.User;
 using MC_server.API.Services;
 using MC_server.Core.Models;
-using MC_server.Core.Services;
-using Microsoft.AspNetCore.Mvc;
 
 namespace MC_server.API.Controllers
 {
-    [Route("/api/users")]
     [ApiController]
+    [Route("/api/users")]
     public class UserController : ControllerBase
     {
-        private readonly UserService _userService;
         private readonly UserApiService _userApiService;
 
-        public UserController(UserService userService, UserApiService userApiService)
+        public UserController(UserApiService userApiService)
         {
-            _userService = userService;
             _userApiService = userApiService;
         }
 
@@ -76,7 +74,7 @@ namespace MC_server.API.Controllers
         public async Task<IActionResult> UpdateUser([FromRoute] string userId, [FromBody] UserUpdateRequest request)
         {
             // 허용된 필드 확인
-            var allowedKeys = new[] { "nickname", "coins", "level", "experience" };
+            var allowedKeys = new[] { "nickname", "addCoins", "level", "experience" };
             var invalidKeys = request.GetInvalidKeys(allowedKeys);
 
             if (invalidKeys.Count > 0)
