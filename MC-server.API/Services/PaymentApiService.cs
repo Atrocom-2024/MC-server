@@ -4,30 +4,84 @@ namespace MC_server.API.Services
 {
     public class PaymentApiService
     {
-        //public async Task<ValidationReceiptResult> ValidationReceiptAsync(string receipt, string store)
-        //{
-        //    switch (store.ToLower())
-        //    {
-        //        case "google":
-        //            return await ValidationGooglePlayReceiptAsync(receipt);
-        //        default:
-        //            throw new ArgumentException("Unsupported store type");
-        //    }
-        //}
+        private readonly HttpClient _httpClient;
+        
+        public PaymentApiService(HttpClient httpClient)
+        {
+            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        }
 
-        //public async Task<ValidationReceiptResult> ValidationGooglePlayReceiptAsync(string receipt)
-        //{
-        //    // 영수증 JSON 파싱
-        //    GooglePlayReceipt googleReceipt = JsonSerializer.Deserialize<GooglePlayReceipt>(receipt) ?? throw new JsonException("Failed to deserialize Google Play receipt.");
+        public async Task<ValidationReceiptResult> ValidationReceiptAsync(string receipt, string store)
+        {
+            switch (store.ToLower())
+            {
+                case "google":
+                    return await ValidationGooglePlayReceiptAsync(receipt);
+                default:
+                    throw new ArgumentException("Unsupported store type");
+            }
+        }
 
-        //    // API 호출에 필요한 데이터 추출
-        //    var purchaseData = googleReceipt.Payload.json;
+        public async Task<ValidationReceiptResult> ValidationGooglePlayReceiptAsync(string receipt)
+        {
+            // 영수증 JSON 파싱
+            GooglePlayReceipt googleReceipt = JsonSerializer.Deserialize<GooglePlayReceipt>(receipt) ?? throw new JsonException("Failed to deserialize Google Play receipt.");
 
-        //    // Google Play API 호출 URL 생성
-        //    string url = $"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/com.Atrocom.MerryCasino/purchases/products/{purchaseData.productId}/tokens/{purchaseData.purchaseToken}";
+            // API 호출에 필요한 데이터 추출
+            var purchaseData = googleReceipt.Payload.json;
 
+            // Google Play API 호출 URL 생성
+            string url = $"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{purchaseData.packageName}/purchases/products/{purchaseData.productId}/tokens/{purchaseData.purchaseToken}";
 
-        //}
+            // 구글 서버로 요청
+            HttpResponseMessage response = await _httpClient.GetAsync(url);
+
+            // 요청 실패 처리
+            if (!response.IsSuccessStatusCode)
+            {
+                return new ValidationReceiptResult
+                {
+                    IsValid = false,
+                    TransactionId = purchaseData.orderId,
+                    PurchasedCoins = 0
+                };
+            }
+
+            // 요청 성공 처리
+            string responseContent = await response.Content.ReadAsStringAsync();
+            var validationResponse = JsonSerializer.Deserialize<GooglePlayValidationResponse>(responseContent)
+                ?? throw new JsonException(responseContent);
+
+            // 구매 상태 체크
+            if (validationResponse.purchaseState != 0) // 구매되지 않았을 때
+            {
+                return new ValidationReceiptResult
+                {
+                    IsValid = false,
+                    TransactionId = purchaseData.orderId,
+                    PurchasedCoins = 0
+                };
+            }
+
+            return new ValidationReceiptResult
+            {
+                IsValid = true,
+                TransactionId = purchaseData.orderId,
+                PurchasedCoins = CalculatePurchasedCoins(purchaseData.productId)
+            };
+        }
+
+        private int CalculatePurchasedCoins(string productId)
+        {
+            return productId switch
+            {
+                "coin_pack_1" => 500000,
+                "coin_pack_2" => 1000000,
+                "coin_pack_3" => 5000000,
+                "coin_pack_4" => 10000000,
+                _ => 0
+            };
+        }
     }
 
     public class ValidationReceiptResult
@@ -56,5 +110,39 @@ namespace MC_server.API.Services
         public string packageName { get; set; } = string.Empty;
         public string productId { get; set; } = string.Empty;
         public string purchaseToken { get; set; } = string.Empty;
+    }
+
+    public class GooglePlayValidationResponse
+    {
+        // 이 종류는 androidpublisher 서비스의 inappPurchase 객체
+        public string kind { get; set; } = string.Empty;
+
+        // 제품이 구매된 시간을 에포크 기준 시간 (1970년 1월 1일) 이후 밀리초 단위로 나타낸 것
+        public string purchaseTimeMillis { get; set; } = string.Empty;
+
+        // 0(구매함), 1(취소됨), 2(대기중)
+        public int purchaseState { get; set; }
+
+        // 인앱 상품의 소비 상태 -> 가능한 값은 0(아직 소비되지 않음), 1(소비함)
+        public int consumptionState { get; set; }
+
+        // 주문의 추가 정보가 포함된 개발자 지정 문자열
+        public string developerPayload { get; set; } = string.Empty;
+
+        // 인앱 상품 구매와 연결된 주문 ID
+        public string orderId { get; set; } = string.Empty;
+
+        // 인앱 상품 구매 유형 -> 가능한 값은 0
+        public int purchaseType { get; set; }
+
+        // 인앱 상품의 확인 상태 -> 가능한 값은 0
+        public int acknowledgementState { get; set; }
+        public string purchaseToken { get; set; } = string.Empty;
+        public string productId { get; set; } = string.Empty;
+        public int quantity { get; set; }
+        public string obfuscatedExternalAccountId { get; set; } = string.Empty;
+        public string obfuscatedExternalProfileId { get; set; } = string.Empty;
+        public string regionCode { get; set; } = string.Empty;
+        public int refundableQuantity { get; set; }
     }
 }

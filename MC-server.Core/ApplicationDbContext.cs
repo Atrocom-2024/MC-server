@@ -1,5 +1,6 @@
 ﻿using MC_server.Core.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace MC_server.Core
 {
