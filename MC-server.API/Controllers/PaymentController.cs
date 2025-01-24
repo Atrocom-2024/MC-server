@@ -21,6 +21,8 @@ namespace MC_server.API.Controllers
         [HttpPost("validate-receipt")]
         public async Task<IActionResult> ValidationReceipt([FromBody] ValidationReceiptRequest request)
         {
+            Console.WriteLine("[web] 결제 영수증 검증 요청");
+
             if (request == null || string.IsNullOrWhiteSpace(request.Receipt) || string.IsNullOrWhiteSpace(request.Store))
             {
                 return BadRequest("Invalid request payload.");
