@@ -11,6 +11,7 @@ namespace MC_server.API.Services
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         }
 
+        // 영수증 검증 메서드 -> 서비스에 따라 switch 문으로 분류
         public async Task<ValidationReceiptResult> ValidationReceiptAsync(string receipt, string store)
         {
             switch (store.ToLower())
@@ -22,8 +23,11 @@ namespace MC_server.API.Services
             }
         }
 
+        // 구글 플레이 영수증 검증 메서드
         public async Task<ValidationReceiptResult> ValidationGooglePlayReceiptAsync(string receipt)
         {
+            Console.WriteLine(receipt);
+
             // 영수증 JSON 파싱
             GooglePlayReceipt googleReceipt = JsonSerializer.Deserialize<GooglePlayReceipt>(receipt) ?? throw new JsonException("Failed to deserialize Google Play receipt.");
 
