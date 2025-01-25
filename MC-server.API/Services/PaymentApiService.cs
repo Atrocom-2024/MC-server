@@ -26,8 +26,6 @@ namespace MC_server.API.Services
         // 구글 플레이 영수증 검증 메서드
         public async Task<ValidationReceiptResult> ValidationGooglePlayReceiptAsync(string receipt)
         {
-            Console.WriteLine(receipt);
-
             // 영수증 JSON 파싱
             GooglePlayReceipt googleReceipt = JsonSerializer.Deserialize<GooglePlayReceipt>(receipt) ?? throw new JsonException("Failed to deserialize Google Play receipt.");
 
