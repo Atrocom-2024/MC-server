@@ -38,7 +38,7 @@ namespace MC_server.API.Services
 
             // 구글 서버로 요청
             HttpResponseMessage response = await _httpClient.GetAsync(url);
-
+            Console.WriteLine(response.StatusCode);
             // 요청 실패 처리
             if (!response.IsSuccessStatusCode)
             {
