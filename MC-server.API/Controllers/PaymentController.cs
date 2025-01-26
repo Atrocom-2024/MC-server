@@ -25,7 +25,7 @@ namespace MC_server.API.Controllers
             Console.WriteLine(request.UserId);
             Console.WriteLine(request.Receipt);
 
-            if (request == null || string.IsNullOrWhiteSpace(request.Receipt) || string.IsNullOrWhiteSpace(request.Store))
+            if (request == null || string.IsNullOrWhiteSpace(request.Store))
             {
                 Console.WriteLine("[web] Invalid request payload");
                 return BadRequest("Invalid request payload.");

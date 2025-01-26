@@ -12,7 +12,7 @@ namespace MC_server.API.Services
         }
 
         // 영수증 검증 메서드 -> 서비스에 따라 switch 문으로 분류
-        public async Task<ValidationReceiptResult> ValidationReceiptAsync(string receipt, string store)
+        public async Task<ValidationReceiptResult> ValidationReceiptAsync(GooglePlayJson receipt, string store)
         {
             switch (store.ToLower())
             {
@@ -24,16 +24,16 @@ namespace MC_server.API.Services
         }
 
         // 구글 플레이 영수증 검증 메서드
-        public async Task<ValidationReceiptResult> ValidationGooglePlayReceiptAsync(string receipt)
+        public async Task<ValidationReceiptResult> ValidationGooglePlayReceiptAsync(GooglePlayJson receipt)
         {
-            // 영수증 JSON 파싱
-            GooglePlayReceipt googleReceipt = JsonSerializer.Deserialize<GooglePlayReceipt>(receipt) ?? throw new JsonException("Failed to deserialize Google Play receipt.");
+            //// 영수증 JSON 파싱
+            //var googleReceipt = JsonSerializer.Deserialize<GooglePlayReceipt>(receipt) ?? throw new JsonException("Failed to deserialize Google Play receipt.");
 
-            // API 호출에 필요한 데이터 추출
-            var purchaseData = googleReceipt.Payload.json;
+            //// API 호출에 필요한 데이터 추출
+            //var purchaseData = googleReceipt.Payload.json;
 
             // Google Play API 호출 URL 생성
-            string url = $"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{purchaseData.packageName}/purchases/products/{purchaseData.productId}/tokens/{purchaseData.purchaseToken}";
+            string url = $"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{receipt.packageName}/purchases/products/{receipt.productId}/tokens/{receipt.purchaseToken}";
 
             // 구글 서버로 요청
             HttpResponseMessage response = await _httpClient.GetAsync(url);
@@ -44,7 +44,7 @@ namespace MC_server.API.Services
                 return new ValidationReceiptResult
                 {
                     IsValid = false,
-                    TransactionId = purchaseData.orderId,
+                    TransactionId = receipt.orderId,
                     PurchasedCoins = 0
                 };
             }
@@ -60,7 +60,7 @@ namespace MC_server.API.Services
                 return new ValidationReceiptResult
                 {
                     IsValid = false,
-                    TransactionId = purchaseData.orderId,
+                    TransactionId = receipt.orderId,
                     PurchasedCoins = 0
                 };
             }
@@ -68,8 +68,8 @@ namespace MC_server.API.Services
             return new ValidationReceiptResult
             {
                 IsValid = true,
-                TransactionId = purchaseData.orderId,
-                PurchasedCoins = CalculatePurchasedCoins(purchaseData.productId)
+                TransactionId = receipt.orderId,
+                PurchasedCoins = CalculatePurchasedCoins(receipt.productId)
             };
         }
 
