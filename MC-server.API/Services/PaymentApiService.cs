@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using MC_server.API.DTOs.Payment;
+using System.Text.Json;
 
 namespace MC_server.API.Services
 {
@@ -12,7 +13,7 @@ namespace MC_server.API.Services
         }
 
         // 영수증 검증 메서드 -> 서비스에 따라 switch 문으로 분류
-        public async Task<ValidationReceiptResult> ValidationReceiptAsync(GooglePlayJson receipt, string store)
+        public async Task<ValidationReceiptResult> ValidationReceiptAsync(GooglePlayReceiptJson receipt, string store)
         {
             switch (store.ToLower())
             {
@@ -24,7 +25,7 @@ namespace MC_server.API.Services
         }
 
         // 구글 플레이 영수증 검증 메서드
-        public async Task<ValidationReceiptResult> ValidationGooglePlayReceiptAsync(GooglePlayJson receipt)
+        public async Task<ValidationReceiptResult> ValidationGooglePlayReceiptAsync(GooglePlayReceiptJson receipt)
         {
             //// 영수증 JSON 파싱
             //var googleReceipt = JsonSerializer.Deserialize<GooglePlayReceipt>(receipt) ?? throw new JsonException("Failed to deserialize Google Play receipt.");
