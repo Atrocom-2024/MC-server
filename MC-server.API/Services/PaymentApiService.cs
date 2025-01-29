@@ -29,6 +29,7 @@ namespace MC_server.API.Services
         public async Task<ValidationReceiptResult> ValidationGooglePlayReceiptAsync(GooglePlayReceiptJson receipt)
         {
             // ----------------------- 아이덴티티 제휴를 통한 토큰 받아오는 부분 -----------------------
+            Console.WriteLine("아이덴티티 제휴 토큰 요청");
             GoogleCredential credential = await GoogleCredential.GetApplicationDefaultAsync();
             credential = credential.CreateScoped(new[] { "https://www.googleapis.com/auth/androidpublisher" });
 
