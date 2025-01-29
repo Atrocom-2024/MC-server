@@ -1,4 +1,5 @@
-﻿using MC_server.API.DTOs.Payment;
+﻿using Google.Apis.Auth.OAuth2;
+using MC_server.API.DTOs.Payment;
 using System.Text.Json;
 
 namespace MC_server.API.Services
@@ -27,6 +28,15 @@ namespace MC_server.API.Services
         // 구글 플레이 영수증 검증 메서드
         public async Task<ValidationReceiptResult> ValidationGooglePlayReceiptAsync(GooglePlayReceiptJson receipt)
         {
+            // ----------------------- 아이덴티티 제휴를 통한 토큰 받아오는 부분 -----------------------
+            GoogleCredential credential = await GoogleCredential.GetApplicationDefaultAsync();
+            credential = credential.CreateScoped(new[] { "https://www.googleapis.com/auth/androidpublisher" });
+
+            // 액세스 토큰 가져오기
+            var token = await credential.UnderlyingCredential.GetAccessTokenForRequestAsync();
+            Console.WriteLine($"Access Token: {token}");
+            // ------------------------------------------------------------------------------------
+
             //// 영수증 JSON 파싱
             //var googleReceipt = JsonSerializer.Deserialize<GooglePlayReceipt>(receipt) ?? throw new JsonException("Failed to deserialize Google Play receipt.");
 
