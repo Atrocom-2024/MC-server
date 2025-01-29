@@ -22,8 +22,6 @@ namespace MC_server.API.Controllers
         public async Task<IActionResult> ValidationReceipt([FromBody] ValidationReceiptRequest request)
         {
             Console.WriteLine("[web] 결제 영수증 검증 요청");
-            Console.WriteLine(request.UserId);
-            Console.WriteLine(request.Receipt);
 
             if (request == null || string.IsNullOrWhiteSpace(request.Store))
             {

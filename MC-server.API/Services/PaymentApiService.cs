@@ -29,13 +29,22 @@ namespace MC_server.API.Services
         public async Task<ValidationReceiptResult> ValidationGooglePlayReceiptAsync(GooglePlayReceiptJson receipt)
         {
             // ----------------------- 아이덴티티 제휴를 통한 토큰 받아오는 부분 -----------------------
-            Console.WriteLine("아이덴티티 제휴 토큰 요청");
-            GoogleCredential credential = await GoogleCredential.GetApplicationDefaultAsync();
-            credential = credential.CreateScoped(new[] { "https://www.googleapis.com/auth/androidpublisher" });
+            try
+            {
+                Console.WriteLine("아이덴티티 제휴 토큰 요청");
 
-            // 액세스 토큰 가져오기
-            var token = await credential.UnderlyingCredential.GetAccessTokenForRequestAsync();
-            Console.WriteLine($"Access Token: {token}");
+                GoogleCredential credential = await GoogleCredential.GetApplicationDefaultAsync();
+                credential = credential.CreateScoped(new[] { "https://www.googleapis.com/auth/androidpublisher" });
+
+                // 액세스 토큰 가져오기
+                var token = await credential.UnderlyingCredential.GetAccessTokenForRequestAsync();
+                Console.WriteLine($"Access Token: {token}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"토큰 요청 중 오류 발생: {ex.Message}");
+                Console.WriteLine($"상세 오류: {ex.StackTrace}");
+            }
             // ------------------------------------------------------------------------------------
 
             //// 영수증 JSON 파싱
