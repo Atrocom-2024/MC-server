@@ -44,7 +44,7 @@ namespace MC_server.API.Services
                 };
             }
 
-            Console.WriteLine($"Access Token: {accessToken}");
+            //Console.WriteLine($"Access Token: {accessToken}");
 
             // 2. Google Play API 호출 URL 생성
             string url = $"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{receipt.packageName}/purchases/products/{receipt.productId}/tokens/{receipt.purchaseToken}";
@@ -54,11 +54,11 @@ namespace MC_server.API.Services
             request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
             // 🔹 4️⃣ 요청을 보내기 전에 헤더 로그 출력 (디버깅용)
-            Console.WriteLine("HTTP 요청 헤더:");
-            foreach (var header in request.Headers)
-            {
-                Console.WriteLine($"  {header.Key}: {string.Join(", ", header.Value)}");
-            }
+            //Console.WriteLine("HTTP 요청 헤더:");
+            //foreach (var header in request.Headers)
+            //{
+            //    Console.WriteLine($"  {header.Key}: {string.Join(", ", header.Value)}");
+            //}
 
             // 4. 구글 서버로 요청
             HttpResponseMessage response = await _httpClient.SendAsync(request);
@@ -120,7 +120,7 @@ namespace MC_server.API.Services
                     .CreateScoped(new[] { "https://www.googleapis.com/auth/androidpublisher" });
 
                 var serviceAccountEmail = ((ServiceAccountCredential)credentials.UnderlyingCredential).Id;
-                Console.WriteLine($"🔹 현재 인증된 서비스 계정 이메일: {serviceAccountEmail}");
+                Console.WriteLine($"현재 인증된 서비스 계정 이메일: {serviceAccountEmail}");
 
                 // 액세스 토큰 요청
                 return await credentials.UnderlyingCredential.GetAccessTokenForRequestAsync();
