@@ -84,7 +84,7 @@ namespace MC_server.API.Services
                     PurchasedCoins = 0
                 };
             }
-            Console.WriteLine("영수증 검증 성공!!!!!!!!!");
+
             return new ValidationReceiptResult
             {
                 IsValid = true,
@@ -93,19 +93,20 @@ namespace MC_server.API.Services
             };
         }
 
-        public async Task<ProcessPaymentResult> ProcessReceiptAsync(string userId, int addCoinsAmount)
+        public async Task<ProcessReceiptResult> ProcessReceiptAsync(string userId, int addCoinsAmount)
         {
             try
             {
                 var user = await _userService.GetUserByIdAsync(userId);
                 user.Coins += addCoinsAmount;
                 await _userService.UpdateUserAsync(user);
-                return new ProcessPaymentResult { IsProcessed = true, ProcessedResultCoins = user.Coins };
+                Console.WriteLine($"{userId}: {user.Coins}");
+                return new ProcessReceiptResult { IsProcessed = true, ProcessedResultCoins = user.Coins };
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in ProcessPayment: {ex.Message}");
-                return new ProcessPaymentResult { IsProcessed= false, ProcessedResultCoins = 0 };
+                return new ProcessReceiptResult { IsProcessed= false, ProcessedResultCoins = 0 };
             }
         }
 
@@ -161,7 +162,7 @@ namespace MC_server.API.Services
         public int PurchasedCoins { get; set; }
     }
 
-    public class ProcessPaymentResult
+    public class ProcessReceiptResult
     {
         public bool IsProcessed { get; set; }
         public long ProcessedResultCoins { get; set; }
