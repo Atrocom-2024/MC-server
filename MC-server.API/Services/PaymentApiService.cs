@@ -84,7 +84,7 @@ namespace MC_server.API.Services
                     PurchasedCoins = 0
                 };
             }
-
+            Console.WriteLine("영수증 검증 성공!!!!!!!!!");
             return new ValidationReceiptResult
             {
                 IsValid = true,
