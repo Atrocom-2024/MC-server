@@ -100,7 +100,6 @@ namespace MC_server.API.Services
                 var user = await _userService.GetUserByIdAsync(userId);
                 user.Coins += addCoinsAmount;
                 await _userService.UpdateUserAsync(user);
-                Console.WriteLine($"{userId}: {user.Coins}");
                 return new ProcessReceiptResult { IsProcessed = true, ProcessedResultCoins = user.Coins };
             }
             catch (Exception ex)

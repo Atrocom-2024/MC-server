@@ -47,7 +47,7 @@ namespace MC_server.API.Controllers
 
                 // 2. 사용자에게 코인 지급 처리
                 var processReceiptResult = await _paymentApiService.ProcessReceiptAsync(request.UserId, validationResult.PurchasedCoins);
-
+                Console.WriteLine(processReceiptResult.IsProcessed);
                 if (!processReceiptResult.IsProcessed)
                 {
                     return StatusCode(500, new ProcessPaymentResponse
