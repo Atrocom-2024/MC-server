@@ -99,6 +99,7 @@ namespace MC_server.API.Services
             {
                 // 환경변수에서 JSON 키 파일 내용 가져오기
                 string? jsonKey = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
+                Console.log(jsonKey);
                 if (string.IsNullOrEmpty(jsonKey))
                 {
                     throw new Exception("환경변수를 불러오지 못했습니다.");
