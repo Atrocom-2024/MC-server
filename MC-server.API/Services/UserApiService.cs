@@ -20,16 +20,18 @@ namespace MC_server.API.Services
 
         public async Task<object> GetUserDetailsForApiAsync(string userId)
         {
-            // Core 서비스 호출
-            User? user = await _userService.GetUserByIdAsync(userId);
-
-            if (user == null)
+            try
             {
-                throw new KeyNotFoundException($"User with Id '{userId}' not found.");
+                // Core 서비스 호출
+                User user = await _userService.GetUserByIdAsync(userId);
+                // API에 특화된 데이터 반환
+                return new { user.UserId, user.Nickname, user.Level, user.Coins };
             }
-
-            // API에 특화된 데이터 반환
-            return new { user.UserId, user.Nickname, user.Level, user.Coins };
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetUserDetailsForApiAsync: {ex.Message}");
+                return new { Error = "An unexpected error occurred.", ex.Message };
+            }
         }
 
         public async Task<object> CreateUserAsync(UserCreateRequest request)
@@ -76,56 +78,59 @@ namespace MC_server.API.Services
             return await _userService.CreateUserAsync(user);
         }
 
-        public async Task<Dictionary<string, object>?> UpdateUserAsync(string userId, UserUpdateRequest request)
+        public async Task<object> UpdateUserAsync(string userId, UserUpdateRequest request)
         {
             // 유저 정보 가져오기
-            User? user = await _userService.GetUserByIdAsync(userId);
-
-            if (user == null)
+            try
             {
-                return null;
-            }
+                User user = await _userService.GetUserByIdAsync(userId);
 
-            var updatedFields = new Dictionary<string, object>();
+                var updatedFields = new Dictionary<string, object>();
 
-            // 닉네임 업데이트
-            if (!string.IsNullOrWhiteSpace(request.Nickname))
-            {
-                // 닉네임 중복 확인
-                if (await _userService.IsNicknameTakenAsync(request.Nickname))
+                // 닉네임 업데이트
+                if (!string.IsNullOrWhiteSpace(request.Nickname))
                 {
-                    throw new InvalidOperationException("Nickname is already taken");
+                    // 닉네임 중복 확인
+                    if (await _userService.IsNicknameTakenAsync(request.Nickname))
+                    {
+                        throw new InvalidOperationException("Nickname is already taken");
+                    }
+
+                    user.Nickname = request.Nickname;
+                    updatedFields["nickname"] = request.Nickname;
                 }
 
-                user.Nickname = request.Nickname;
-                updatedFields["nickname"] = request.Nickname;
-            }
+                // 코인 업데이트
+                if (request.AddCoins.HasValue)
+                {
+                    user.Coins += request.AddCoins.Value;
+                    updatedFields["addCoins"] = user.Coins;
+                }
 
-            // 코인 업데이트
-            if (request.AddCoins.HasValue)
+                // 레벨 업데이트
+                if (request.Level.HasValue)
+                {
+                    user.Level = request.Level.Value;
+                    updatedFields["level"] = request.Level.Value;
+                }
+
+                // 경험치 업데이트
+                if (request.Experience.HasValue)
+                {
+                    user.Experience = request.Experience.Value;
+                    updatedFields["experience"] = request.Experience.Value;
+                }
+
+                // 변경 사항 저장
+                await _userService.UpdateUserAsync(user);
+
+                return updatedFields;
+            }
+            catch (Exception ex)
             {
-                user.Coins += request.AddCoins.Value;
-                updatedFields["addCoins"] = user.Coins;
+                Console.WriteLine($"Error in UpdateUserAsync: {ex.Message}");
+                return new { Error = "An unexpected error occurred.", ex.Message };
             }
-
-            // 레벨 업데이트
-            if (request.Level.HasValue)
-            {
-                user.Level = request.Level.Value;
-                updatedFields["level"] = request.Level.Value;
-            }
-
-            // 경험치 업데이트
-            if (request.Experience.HasValue)
-            {
-                user.Experience = request.Experience.Value;
-                updatedFields["experience"] = request.Experience.Value;
-            }
-
-            // 변경 사항 저장
-            await _userService.UpdateUserAsync(user);
-
-            return updatedFields;
         }
     }
 }

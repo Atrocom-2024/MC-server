@@ -1,17 +1,20 @@
-﻿using Google.Apis.Auth.OAuth2;
+﻿using System.Text.Json;
+using Google.Apis.Auth.OAuth2;
+
 using MC_server.API.DTOs.Payment;
-using System.Net;
-using System.Text.Json;
+using MC_server.Core.Services;
 
 namespace MC_server.API.Services
 {
     public class PaymentApiService
     {
         private readonly HttpClient _httpClient;
+        private readonly UserService _userService;
         
-        public PaymentApiService(HttpClient httpClient)
+        public PaymentApiService(HttpClient httpClient, UserService userService)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            _userService = userService ?? throw new ArgumentNullException(nameof(_userService));
         }
 
         // 영수증 검증 메서드 -> 서비스에 따라 switch 문으로 분류
@@ -30,7 +33,6 @@ namespace MC_server.API.Services
         public async Task<ValidationReceiptResult> ValidationGooglePlayReceiptAsync(GooglePlayReceiptJson receipt)
         {
             // 1. 액세스 토큰 가져오기
-
             string accessToken = await GetAccessTokenAsync();
 
             if (string.IsNullOrEmpty(accessToken))
@@ -44,8 +46,6 @@ namespace MC_server.API.Services
                 };
             }
 
-            //Console.WriteLine($"Access Token: {accessToken}");
-
             // 2. Google Play API 호출 URL 생성
             string url = $"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{receipt.packageName}/purchases/products/{receipt.productId}/tokens/{receipt.purchaseToken}";
 
@@ -53,23 +53,14 @@ namespace MC_server.API.Services
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
-            // 🔹 4️⃣ 요청을 보내기 전에 헤더 로그 출력 (디버깅용)
-            //Console.WriteLine("HTTP 요청 헤더:");
-            //foreach (var header in request.Headers)
-            //{
-            //    Console.WriteLine($"  {header.Key}: {string.Join(", ", header.Value)}");
-            //}
-
             // 4. 구글 서버로 요청
             HttpResponseMessage response = await _httpClient.SendAsync(request);
             string responseContent = await response.Content.ReadAsStringAsync();
 
-            Console.WriteLine($"Google Play API Response: {response.StatusCode}");
-            Console.WriteLine(responseContent);
-
             // 요청 실패 처리
             if (!response.IsSuccessStatusCode)
             {
+                Console.WriteLine("[web] 영수증 검증 요청에 실패했습니다.");
                 return new ValidationReceiptResult
                 {
                     IsValid = false,
@@ -85,6 +76,7 @@ namespace MC_server.API.Services
             // 구매 상태 체크
             if (validationResponse.purchaseState != 0) // 구매되지 않았을 때
             {
+                Console.WriteLine("[web] 구매되지 않은 상품입니다.");
                 return new ValidationReceiptResult
                 {
                     IsValid = false,
@@ -101,7 +93,23 @@ namespace MC_server.API.Services
             };
         }
 
-        private async Task<string> GetAccessTokenAsync()
+        public async Task<ProcessPaymentResult> ProcessReceiptAsync(string userId, int addCoinsAmount)
+        {
+            try
+            {
+                var user = await _userService.GetUserByIdAsync(userId);
+                user.Coins += addCoinsAmount;
+                await _userService.UpdateUserAsync(user);
+                return new ProcessPaymentResult { IsProcessed = true, ProcessedResultCoins = user.Coins };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in ProcessPayment: {ex.Message}");
+                return new ProcessPaymentResult { IsProcessed= false, ProcessedResultCoins = 0 };
+            }
+        }
+
+        private static async Task<string> GetAccessTokenAsync()
         {
             try
             {
@@ -151,6 +159,12 @@ namespace MC_server.API.Services
         public bool IsValid { get; set; }
         public string TransactionId { get; set; } = string.Empty;
         public int PurchasedCoins { get; set; }
+    }
+
+    public class ProcessPaymentResult
+    {
+        public bool IsProcessed { get; set; }
+        public long ProcessedResultCoins { get; set; }
     }
 
     public class GooglePlayReceipt

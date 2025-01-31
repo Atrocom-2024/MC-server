@@ -14,35 +14,38 @@ namespace MC_server.GameRoom.Service
 
         public async Task<User?> UpdateUserAsync(string userId, string property, object value)
         {
-            // 유저 정보 가져오기
-            User? user = await _userService.GetUserByIdAsync(userId);
-
-            if (user == null)
+            try
             {
+                // 유저 정보 가져오기
+                User user = await _userService.GetUserByIdAsync(userId);
+
+                switch (property)
+                {
+                    case "coins":
+                        // 코인 업데이트
+                        if (value is int coinAmount)
+                        {
+                            user.Coins += coinAmount;
+                            Console.WriteLine($"[socket] Updated coins for user to {user.Coins}");
+                        }
+                        else
+                        {
+                            throw new ArgumentException("Invalid value type for coins.");
+                        }
+                        break;
+                    default:
+                        throw new ArgumentException($"Property '{property}' is not a valid UserUpdate property.");
+                }
+
+                // 변경 사항 저장
+                await _userService.UpdateUserAsync(user);
+                return user;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in UpdateUserAsync: {ex.Message}");
                 return null;
             }
-
-            switch (property)
-            {
-                case "coins":
-                    // 코인 업데이트
-                    if (value is int coinAmount)
-                    {
-                        user.Coins += coinAmount;
-                        Console.WriteLine($"[socket] Updated coins for user to {user.Coins}");
-                    }
-                    else
-                    {
-                        throw new ArgumentException("Invalid value type for coins.");
-                    }
-                    break;
-                default:
-                    throw new ArgumentException($"Property '{property}' is not a valid UserUpdate property.");
-            }
-
-            // 변경 사항 저장
-            await _userService.UpdateUserAsync(user);
-            return user;
         }
     }
 }
