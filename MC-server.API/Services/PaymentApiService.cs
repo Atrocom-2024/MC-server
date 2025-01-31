@@ -117,8 +117,7 @@ namespace MC_server.API.Services
                 using var stream = new FileStream(jsonKeyFilePath, FileMode.Open, FileAccess.Read);
 
                 var credentials = GoogleCredential.FromStream(stream)
-                    .CreateScoped(new[] { "https://oauth2.googleapis.com/token" });
-                    //.CreateScoped(new[] { "https://www.googleapis.com/auth/androidpublisher" });
+                    .CreateScoped(new[] { "https://www.googleapis.com/auth/androidpublisher" });
 
                 var serviceAccountEmail = ((ServiceAccountCredential)credentials.UnderlyingCredential).Id;
                 Console.WriteLine($"현재 인증된 서비스 계정 이메일: {serviceAccountEmail}");
