@@ -28,23 +28,22 @@ namespace MC_server.API.Services
         // 구글 플레이 영수증 검증 메서드
         public async Task<ValidationReceiptResult> ValidationGooglePlayReceiptAsync(GooglePlayReceiptJson receipt)
         {
-            // ----------------------- 아이덴티티 제휴를 통한 토큰 받아오는 부분 -----------------------
-            try
-            {
-                Console.WriteLine("아이덴티티 제휴 토큰 요청");
+            // ------------------------------ 액세스 토큰 받아오는 부분 ------------------------------
 
-                GoogleCredential credential = await GoogleCredential.GetApplicationDefaultAsync();
-                credential = credential.CreateScoped(new[] { "https://www.googleapis.com/auth/androidpublisher" });
+            string accessToken = await GetAccessTokenAsync();
 
-                // 액세스 토큰 가져오기
-                var token = await credential.UnderlyingCredential.GetAccessTokenForRequestAsync();
-                Console.WriteLine($"Access Token: {token}");
-            }
-            catch (Exception ex)
+            if (string.IsNullOrEmpty(accessToken))
             {
-                Console.WriteLine($"토큰 요청 중 오류 발생: {ex.Message}");
-                Console.WriteLine($"상세 오류: {ex.StackTrace}");
+                Console.WriteLine("[web] Access Token을 가져오는 데 실패했습니다.");
+                return new ValidationReceiptResult
+                {
+                    IsValid = false,
+                    TransactionId = receipt.orderId,
+                    PurchasedCoins = 0
+                };
             }
+
+            Console.WriteLine($"Access Token: {accessToken}");
             // ------------------------------------------------------------------------------------
 
             //// 영수증 JSON 파싱
@@ -92,6 +91,33 @@ namespace MC_server.API.Services
                 TransactionId = receipt.orderId,
                 PurchasedCoins = CalculatePurchasedCoins(receipt.productId)
             };
+        }
+
+        private async Task<string> GetAccessTokenAsync()
+        {
+            try
+            {
+                // 환경변수에서 JSON 키 파일 내용 가져오기
+                string? jsonKey = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
+                if (string.IsNullOrEmpty(jsonKey))
+                {
+                    throw new Exception("환경변수를 불러오지 못했습니다.");
+                }
+
+                // JSON 키를 메모리 스트림으로 변환하여 GoogleCredentials 로드
+                using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(jsonKey));
+                var credentials = GoogleCredential.FromStream(stream)
+                    .CreateScoped(new[] { "https://www.googleapis.com/auth/androidpublisher" });
+
+                // 액세스 토큰 요청
+                return await credentials.UnderlyingCredential.GetAccessTokenForRequestAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"토큰 요청 중 오류 발생: {ex.Message}");
+                Console.WriteLine($"상세 오류: {ex.StackTrace}");
+                return string.Empty;
+            }
         }
 
         private int CalculatePurchasedCoins(string productId)
