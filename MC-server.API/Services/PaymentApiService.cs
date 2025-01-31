@@ -98,15 +98,16 @@ namespace MC_server.API.Services
             try
             {
                 // 환경변수에서 JSON 키 파일 내용 가져오기
-                string? jsonKey = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
-                Console.WriteLine(jsonKey);
-                if (string.IsNullOrEmpty(jsonKey))
+                string? jsonKeyFilePath = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
+
+                if (string.IsNullOrEmpty(jsonKeyFilePath))
                 {
                     throw new Exception("환경변수를 불러오지 못했습니다.");
                 }
 
                 // JSON 키를 메모리 스트림으로 변환하여 GoogleCredentials 로드
-                using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(jsonKey));
+                using var stream = new FileStream(jsonKeyFilePath, FileMode.Open, FileAccess.Read);
+
                 var credentials = GoogleCredential.FromStream(stream)
                     .CreateScoped(new[] { "https://www.googleapis.com/auth/androidpublisher" });
 
