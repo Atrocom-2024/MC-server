@@ -1,5 +1,6 @@
 ﻿using Google.Apis.Auth.OAuth2;
 using MC_server.API.DTOs.Payment;
+using System.Net;
 using System.Text.Json;
 
 namespace MC_server.API.Services
@@ -117,6 +118,9 @@ namespace MC_server.API.Services
 
                 var credentials = GoogleCredential.FromStream(stream)
                     .CreateScoped(new[] { "https://www.googleapis.com/auth/androidpublisher" });
+
+                var serviceAccountEmail = ((ServiceAccountCredential)credentials.UnderlyingCredential).Id;
+                Console.WriteLine($"🔹 현재 인증된 서비스 계정 이메일: {serviceAccountEmail}");
 
                 // 액세스 토큰 요청
                 return await credentials.UnderlyingCredential.GetAccessTokenForRequestAsync();
