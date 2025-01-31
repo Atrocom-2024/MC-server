@@ -28,7 +28,7 @@ namespace MC_server.API.Services
         // 구글 플레이 영수증 검증 메서드
         public async Task<ValidationReceiptResult> ValidationGooglePlayReceiptAsync(GooglePlayReceiptJson receipt)
         {
-            // ------------------------------ 액세스 토큰 받아오는 부분 ------------------------------
+            // 1. 액세스 토큰 가져오기
 
             string accessToken = await GetAccessTokenAsync();
 
@@ -44,20 +44,20 @@ namespace MC_server.API.Services
             }
 
             Console.WriteLine($"Access Token: {accessToken}");
-            // ------------------------------------------------------------------------------------
 
-            //// 영수증 JSON 파싱
-            //var googleReceipt = JsonSerializer.Deserialize<GooglePlayReceipt>(receipt) ?? throw new JsonException("Failed to deserialize Google Play receipt.");
-
-            //// API 호출에 필요한 데이터 추출
-            //var purchaseData = googleReceipt.Payload.json;
-
-            // Google Play API 호출 URL 생성
+            // 2. Google Play API 호출 URL 생성
             string url = $"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{receipt.packageName}/purchases/products/{receipt.productId}/tokens/{receipt.purchaseToken}";
 
-            // 구글 서버로 요청
-            HttpResponseMessage response = await _httpClient.GetAsync(url);
+            // 3. HTTP 요청 생성(Authorization 헤더 포함)
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+            // 4. 구글 서버로 요청
+            HttpResponseMessage response = await _httpClient.SendAsync(request);
+            string responseContent = await response.Content.ReadAsStringAsync();
+
             Console.WriteLine(response.StatusCode);
+
             // 요청 실패 처리
             if (!response.IsSuccessStatusCode)
             {
@@ -69,8 +69,7 @@ namespace MC_server.API.Services
                 };
             }
 
-            // 요청 성공 처리
-            string responseContent = await response.Content.ReadAsStringAsync();
+            // 5. 응답 JSON 파싱
             var validationResponse = JsonSerializer.Deserialize<GooglePlayValidationResponse>(responseContent)
                 ?? throw new JsonException(responseContent);
 
