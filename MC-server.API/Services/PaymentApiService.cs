@@ -52,11 +52,19 @@ namespace MC_server.API.Services
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
+            // 🔹 4️⃣ 요청을 보내기 전에 헤더 로그 출력 (디버깅용)
+            Console.WriteLine("HTTP 요청 헤더:");
+            foreach (var header in request.Headers)
+            {
+                Console.WriteLine($"  {header.Key}: {string.Join(", ", header.Value)}");
+            }
+
             // 4. 구글 서버로 요청
             HttpResponseMessage response = await _httpClient.SendAsync(request);
             string responseContent = await response.Content.ReadAsStringAsync();
 
-            Console.WriteLine(response.StatusCode);
+            Console.WriteLine($"Google Play API Response: {response.StatusCode}");
+            Console.WriteLine(responseContent);
 
             // 요청 실패 처리
             if (!response.IsSuccessStatusCode)
