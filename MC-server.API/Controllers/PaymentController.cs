@@ -38,7 +38,7 @@ namespace MC_server.API.Controllers
                 {
                     return BadRequest(new ProcessPaymentResponse 
                     {
-                        IsProcessed = false,
+                        IsProcessed = validationResult.IsValid,
                         TranscationId = validationResult.TransactionId,
                         ProcessedResultCoins = 0,
                         Message = "Invalid receipt.",
@@ -47,12 +47,12 @@ namespace MC_server.API.Controllers
 
                 // 2. 사용자에게 코인 지급 처리
                 var processReceiptResult = await _paymentApiService.ProcessReceiptAsync(request.UserId, validationResult.PurchasedCoins);
-                Console.WriteLine(processReceiptResult.IsProcessed);
+
                 if (!processReceiptResult.IsProcessed)
                 {
                     return StatusCode(500, new ProcessPaymentResponse
                     {
-                        IsProcessed = false,
+                        IsProcessed = processReceiptResult.IsProcessed,
                         TranscationId = validationResult.TransactionId,
                         ProcessedResultCoins = 0,
                         Message = "An unexpected error occurred. Please try again later"
@@ -61,7 +61,7 @@ namespace MC_server.API.Controllers
 
                 return Ok(new ProcessPaymentResponse
                 {
-                    IsProcessed = true,
+                    IsProcessed = processReceiptResult.IsProcessed,
                     TranscationId = validationResult.TransactionId,
                     ProcessedResultCoins = processReceiptResult.ProcessedResultCoins,
                     Message = "Payment successfully.",

@@ -20,18 +20,22 @@ namespace MC_server.API.Services
 
         public async Task<object> GetUserDetailsForApiAsync(string userId)
         {
-            try
-            {
+            //try
+            //{
                 // Core 서비스 호출
                 User user = await _userService.GetUserByIdAsync(userId);
                 // API에 특화된 데이터 반환
                 return new { user.UserId, user.Nickname, user.Level, user.Coins };
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in GetUserDetailsForApiAsync: {ex.Message}");
-                return new { Error = "An unexpected error occurred.", ex.Message };
-            }
+            //}
+            //catch (KeyNotFoundException ex)
+            //{
+
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine($"Error in GetUserDetailsForApiAsync: {ex.Message}");
+            //    return new { Error = "An unexpected error occurred.", ex.Message };
+            //}
         }
 
         public async Task<object> CreateUserAsync(UserCreateRequest request)

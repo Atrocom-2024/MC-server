@@ -65,6 +65,7 @@ namespace MC_server.API.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error in GetUserById: {ex.Message}");
                 return NotFound(new { message = ex.Message });
             }
         }
