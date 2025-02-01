@@ -27,7 +27,7 @@ namespace MC_server.API.Services
 
             if (user == null)
             {
-                return user;
+                return null;
             }
 
                 // API에 특화된 데이터 반환

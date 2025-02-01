@@ -45,7 +45,7 @@ namespace MC_server.API.Controllers
             {
                 return StatusCode(500, new
                 {
-                    controller = nameof(UserController),
+                    controller = nameof(CreateUser),
                     message = ex.Message
                 });
             }
@@ -61,12 +61,22 @@ namespace MC_server.API.Controllers
             {
                 // UserApiService를 호출
                 var userDetails = await _userApiService.GetUserDetailsForApiAsync(userId);
+
+                if (userDetails == null)
+                {
+                    return NotFound();
+                }
+
                 return Ok(userDetails);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in GetUserById: {ex.Message}");
-                return NotFound(new { message = ex.Message });
+                return StatusCode(500, new
+                {
+                    controller = nameof(GetUserById),
+                    message = ex.Message
+                });
             }
         }
 
