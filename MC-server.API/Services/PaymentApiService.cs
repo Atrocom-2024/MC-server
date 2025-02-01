@@ -98,6 +98,12 @@ namespace MC_server.API.Services
             try
             {
                 var user = await _userService.GetUserByIdAsync(userId);
+
+                if (user == null)
+                {
+                    return new ProcessReceiptResult { IsProcessed = false, ProcessedResultCoins = 0 };
+                }
+
                 user.Coins += addCoinsAmount;
                 await _userService.UpdateUserAsync(user);
                 return new ProcessReceiptResult { IsProcessed = true, ProcessedResultCoins = user.Coins };

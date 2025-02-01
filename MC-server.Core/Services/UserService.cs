@@ -36,11 +36,16 @@ namespace MC_server.Core.Services
         }
 
         // 유저 정보 읽기
-        public async Task<User> GetUserByIdAsync(string userId)
+        public async Task<User?> GetUserByIdAsync(string userId)
         {
             using var scope = _serviceScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            User user = await dbContext.Users.FindAsync(userId) ?? throw new KeyNotFoundException($"User with ID {userId} not found.");
+            User? user = await dbContext.Users.FindAsync(userId);
+
+            if (user == null)
+            {
+                return null;
+            }
 
             return user;
         }
@@ -64,9 +69,13 @@ namespace MC_server.Core.Services
 
             try
             {
-                User user = await GetUserByIdAsync(userId);
-                dbContext.Users.Remove(user);
-                await dbContext.SaveChangesAsync();
+                User? user = await GetUserByIdAsync(userId);
+
+                if (user != null)
+                {
+                    dbContext.Users.Remove(user);
+                    await dbContext.SaveChangesAsync();
+                }
             }
             catch (Exception ex)
             {

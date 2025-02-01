@@ -18,12 +18,18 @@ namespace MC_server.API.Services
             _userService = userService;
         }
 
-        public async Task<object> GetUserDetailsForApiAsync(string userId)
+        public async Task<object?> GetUserDetailsForApiAsync(string userId)
         {
             //try
             //{
                 // Core 서비스 호출
-                User user = await _userService.GetUserByIdAsync(userId);
+                User? user = await _userService.GetUserByIdAsync(userId);
+
+            if (user == null)
+            {
+                return user;
+            }
+
                 // API에 특화된 데이터 반환
                 return new { user.UserId, user.Nickname, user.Level, user.Coins };
             //}
@@ -82,12 +88,17 @@ namespace MC_server.API.Services
             return await _userService.CreateUserAsync(user);
         }
 
-        public async Task<object> UpdateUserAsync(string userId, UserUpdateRequest request)
+        public async Task<object?> UpdateUserAsync(string userId, UserUpdateRequest request)
         {
             // 유저 정보 가져오기
             try
             {
-                User user = await _userService.GetUserByIdAsync(userId);
+                User? user = await _userService.GetUserByIdAsync(userId);
+
+                if (user == null)
+                {
+                    return null;
+                }
 
                 var updatedFields = new Dictionary<string, object>();
 

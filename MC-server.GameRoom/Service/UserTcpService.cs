@@ -17,7 +17,12 @@ namespace MC_server.GameRoom.Service
             try
             {
                 // 유저 정보 가져오기
-                User user = await _userService.GetUserByIdAsync(userId);
+                User? user = await _userService.GetUserByIdAsync(userId);
+
+                if (user == null)
+                {
+                    return null;
+                }
 
                 switch (property)
                 {
