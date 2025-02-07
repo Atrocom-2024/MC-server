@@ -10,6 +10,7 @@ namespace MC_server.GameRoom.Utils
         {
             return new GameSession
             {
+                GameId = PublicUtils.GenerateRandomString(20),
                 TotalBetAmount = 0,
                 TotalUser = 0,
                 TotalJackpotAmount = room.BaseJackpotAmount,

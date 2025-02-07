@@ -27,6 +27,6 @@ namespace MC_server.Core.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Computed)] // 데이터베이스에서 기본값 설정
         public DateTime UpdatedAt { get; set; }
 
-        public ICollection<Game> Games { get; set; } = new List<Game>();
+        public ICollection<GameRecord> Games { get; set; } = new List<GameRecord>();
     }
 }

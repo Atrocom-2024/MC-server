@@ -23,6 +23,6 @@ namespace MC_server.Core
         // 엔티티 정의
         public DbSet<User> Users { get; set; }
         public DbSet<Room> Rooms { get; set; }
-        public DbSet<Game> Games { get; set; }
+        public DbSet<GameRecord> Games { get; set; }
     }
 }

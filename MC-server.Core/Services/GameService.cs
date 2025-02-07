@@ -14,7 +14,7 @@ namespace MC_server.Core.Services
         }
 
         // 게임 생성
-        public async Task<Game> CreateGameAsync(Game game)
+        public async Task<GameRecord> CreateGameRecordAsync(GameRecord game)
         {
             using var scope = _serviceScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -31,11 +31,11 @@ namespace MC_server.Core.Services
         }
 
         // 게임 정보 읽기
-        public async Task<Game?> GetGameByIdAsync(string gameId)
+        public async Task<GameRecord?> GetGameRecordByIdAsync(string gameId)
         {
             using var scope = _serviceScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            Game? game = await dbContext.Games.FindAsync(gameId);
+            GameRecord? game = await dbContext.Games.FindAsync(gameId);
 
             if (game == null)
             {
@@ -45,7 +45,7 @@ namespace MC_server.Core.Services
             return game;
         }
 
-        public async Task<List<Game>> GetAllGamesAsync()
+        public async Task<List<GameRecord>> GetAllGamesAsync()
         {
             using var scope = _serviceScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -59,7 +59,7 @@ namespace MC_server.Core.Services
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             try
             {
-                Game? game = await GetGameByIdAsync(gameId);
+                GameRecord? game = await GetGameRecordByIdAsync(gameId);
                 if (game != null)
                 {
                     dbContext.Games.Remove(game);

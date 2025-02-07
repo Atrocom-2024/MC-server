@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 
-using MC_server.Core.Services;
 using MC_server.GameRoom.Managers.Models;
 using MC_server.GameRoom.Utils;
 using MC_server.GameRoom.Service;
@@ -17,21 +16,21 @@ namespace MC_server.GameRoom.Managers
 
         private readonly ClientManager _clientManager;
         private readonly UserTcpService _userTcpService;
-        private readonly RoomService _roomService;
+        private readonly GameTcpService _gameTcpService;
 
         private readonly object _lock = new object();
 
-        public GameRoomManager(ClientManager clientManager, UserTcpService userTcpService, RoomService roomService)
+        public GameRoomManager(ClientManager clientManager, UserTcpService userTcpService, GameTcpService gameTcpService)
         {
             _clientManager = clientManager ?? throw new ArgumentNullException(nameof(clientManager));
-            _userTcpService = userTcpService ?? throw new ArgumentNullException(nameof(clientManager));
-            _roomService = roomService ?? throw new ArgumentNullException(nameof(roomService));
+            _userTcpService = userTcpService ?? throw new ArgumentNullException(nameof(userTcpService));
+            _gameTcpService = gameTcpService ?? throw new ArgumentNullException(nameof(gameTcpService));
         }
 
         public async Task InitializeRooms()
         {
             // DB에서 룸의 기본 정보를 모두 받아옴
-            var allRooms = await _roomService.GetAllRoomsAsync();
+            var allRooms = await _gameTcpService.GetAllRoomsAsync();
 
             // 데이터 출력
             if (allRooms != null && allRooms.Count > 0)
@@ -86,26 +85,29 @@ namespace MC_server.GameRoom.Managers
             // TODO: 잭팟이 터졌을 때 해당 룸 세션 초기화 기능 -> 다른 유저들에겐 TotalBetAmount의 10% 반환 후 페이아웃은 반환되지 않고 초기화
             Console.WriteLine($"[socket] Room {roomId}: Resetting session");
 
+            await _gameTcpService.RecordGameResult(roomId, _gameSessions[roomId]);
+
             var clientsInRoom = _clientManager.GetClientsInRoom(roomId);
 
             // 잭팟으로 인한 초기화 로직 추가 가능
-            var room = await _roomService.GetRoomByIdAsync(roomId);
+            var room = await _gameTcpService.GetRoomByIdAsync(roomId);
             if (room != null)
             {
                 // 룸 세션 초기화 -> IsJackpot이 false이면 기존의 잭팟 금액 유지
-                if (!_gameSessions[room.RoomId].IsJackpot) // 잭팟이 터지지 않았을 때
+                if (!_gameSessions[roomId].IsJackpot) // 잭팟이 터지지 않았을 때
                 {
                     long jackpotAmount = _gameSessions[room.RoomId].TotalJackpotAmount;
-                    _gameSessions[room.RoomId] = GameSessionUtils.CreateNewSession(room);
-                    _gameSessions[room.RoomId].TotalJackpotAmount = jackpotAmount;
-                    _gameSessions[room.RoomId].TotalUser = clientsInRoom.Count();
+
+                    _gameSessions[roomId] = GameSessionUtils.CreateNewSession(room);
+                    _gameSessions[roomId].TotalJackpotAmount = jackpotAmount;
+                    _gameSessions[roomId].TotalUser = clientsInRoom.Count();
                 }
                 else
                 {
-                    _gameSessions[room.RoomId] = GameSessionUtils.CreateNewSession(room);
-                    _gameSessions[room.RoomId].TotalUser = clientsInRoom.Count();
+                    _gameSessions[roomId] = GameSessionUtils.CreateNewSession(room);
+                    _gameSessions[roomId].TotalUser = clientsInRoom.Count();
                 }
-                Console.WriteLine($"[socket] Room TotalUser {_gameSessions[room.RoomId].TotalUser}");
+                Console.WriteLine($"[socket] Room TotalUser {_gameSessions[roomId].TotalUser}");
 
                 await ReturnPayout(roomId); // 게임 세션 초기화 시 페이아웃 반환
 

@@ -22,6 +22,7 @@ namespace MC_server.GameRoom.Extensions
 
             serviceCollection.AddScoped<GameRoomHandler>();
             serviceCollection.AddScoped<UserTcpService>();
+            serviceCollection.AddScoped<GameTcpService>();
 
             return serviceCollection.BuildServiceProvider();
         }
