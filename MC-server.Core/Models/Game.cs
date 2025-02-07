@@ -26,11 +26,8 @@ namespace MC_server.Core.Models
         [Column("is_jackpot")]
         public bool IsJackpot { get; set; }
 
-        [Column("created_at", TypeName = "datetime2")]
+        [Column("created_at", TypeName = "datetime2")] // 데이터 타입 명시
         public DateTime CreatedAt { get; set; }
-
-        [Column("updated_at", TypeName = "datetime2")]
-        public DateTime UpdatedAt { get; set; }
 
         public Room Room { get; set; } = new Room();
     }
