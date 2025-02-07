@@ -13,7 +13,7 @@ namespace MC_server.GameRoom.Managers
         // 각 게임 룸의 현재 세션 정보를 관리 -> 키는 룸 id, 값은 해당 룸의 세션 데이터
         private readonly ConcurrentDictionary<int, GameSession> _gameSessions = new ConcurrentDictionary<int, GameSession>();
         // 각 룸별 타이머 관리
-        private readonly ConcurrentDictionary<int, Timer> _roomTimers = new ConcurrentDictionary<int, Timer>();
+        private readonly ConcurrentDictionary<int, Timer> _sessionTimers = new ConcurrentDictionary<int, Timer>();
 
         private readonly ClientManager _clientManager;
         private readonly UserTcpService _userTcpService;
@@ -51,7 +51,7 @@ namespace MC_server.GameRoom.Managers
         // 특정 룸의 타이머 시작
         public void StartRoomTimer(int roomId)
         {
-            if (_roomTimers.ContainsKey(roomId))
+            if (_sessionTimers.ContainsKey(roomId))
             {
                 Console.WriteLine($"[socket] Timer for Room {roomId} is already running.");
                 return;
@@ -63,14 +63,14 @@ namespace MC_server.GameRoom.Managers
                 await ResetGameRoom(roomId);
             }, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
 
-            _roomTimers[roomId] = timer;
+            _sessionTimers[roomId] = timer;
             Console.WriteLine($"[socket] Timer started for Room {roomId}");
         }
 
         // 특정 룸의 타이머 중단
         public void StopRoomTimer(int roomId)
         {
-            if (_roomTimers.TryRemove(roomId, out var timer))
+            if (_sessionTimers.TryRemove(roomId, out var timer))
             {
                 timer.Dispose();
             }
