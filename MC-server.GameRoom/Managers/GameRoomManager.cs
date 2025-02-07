@@ -11,7 +11,7 @@ namespace MC_server.GameRoom.Managers
     public class GameRoomManager
     {
         // 각 게임 룸의 현재 세션 정보를 관리 -> 키는 룸 id, 값은 해당 룸의 세션 데이터
-        private readonly ConcurrentDictionary<int, GameSession> _roomSessions = new ConcurrentDictionary<int, GameSession>();
+        private readonly ConcurrentDictionary<int, GameSession> _gameSessions = new ConcurrentDictionary<int, GameSession>();
         // 각 룸별 타이머 관리
         private readonly ConcurrentDictionary<int, Timer> _roomTimers = new ConcurrentDictionary<int, Timer>();
 
@@ -39,7 +39,7 @@ namespace MC_server.GameRoom.Managers
                 foreach (var room in allRooms)
                 {
                     // 게임 세션 초기화
-                    _roomSessions[room.RoomId] = GameSessionUtils.CreateNewSession(room);
+                    _gameSessions[room.RoomId] = GameSessionUtils.CreateNewSession(room);
 
                     // 타이머 초기화
                     StartRoomTimer(room.RoomId);
@@ -93,19 +93,19 @@ namespace MC_server.GameRoom.Managers
             if (room != null)
             {
                 // 룸 세션 초기화 -> IsJackpot이 false이면 기존의 잭팟 금액 유지
-                if (!_roomSessions[room.RoomId].IsJackpot) // 잭팟이 터지지 않았을 때
+                if (!_gameSessions[room.RoomId].IsJackpot) // 잭팟이 터지지 않았을 때
                 {
-                    long jackpotAmount = _roomSessions[room.RoomId].TotalJackpotAmount;
-                    _roomSessions[room.RoomId] = GameSessionUtils.CreateNewSession(room);
-                    _roomSessions[room.RoomId].TotalJackpotAmount = jackpotAmount;
-                    _roomSessions[room.RoomId].TotalUser = clientsInRoom.Count();
+                    long jackpotAmount = _gameSessions[room.RoomId].TotalJackpotAmount;
+                    _gameSessions[room.RoomId] = GameSessionUtils.CreateNewSession(room);
+                    _gameSessions[room.RoomId].TotalJackpotAmount = jackpotAmount;
+                    _gameSessions[room.RoomId].TotalUser = clientsInRoom.Count();
                 }
                 else
                 {
-                    _roomSessions[room.RoomId] = GameSessionUtils.CreateNewSession(room);
-                    _roomSessions[room.RoomId].TotalUser = clientsInRoom.Count();
+                    _gameSessions[room.RoomId] = GameSessionUtils.CreateNewSession(room);
+                    _gameSessions[room.RoomId].TotalUser = clientsInRoom.Count();
                 }
-                Console.WriteLine($"[socket] Room TotalUser {_roomSessions[room.RoomId].TotalUser}");
+                Console.WriteLine($"[socket] Room TotalUser {_gameSessions[room.RoomId].TotalUser}");
 
                 await ReturnPayout(roomId); // 게임 세션 초기화 시 페이아웃 반환
 
@@ -188,7 +188,7 @@ namespace MC_server.GameRoom.Managers
 
         public GameSession GetGameSession(int roomId)
         {
-            _roomSessions.TryGetValue(roomId, out var gameSession);
+            _gameSessions.TryGetValue(roomId, out var gameSession);
 
             if (gameSession == null)
             {
@@ -200,7 +200,7 @@ namespace MC_server.GameRoom.Managers
 
         public ConcurrentDictionary<int, GameSession> GetAllSessions()
         {
-            return _roomSessions;
+            return _gameSessions;
         }
     }
 }
