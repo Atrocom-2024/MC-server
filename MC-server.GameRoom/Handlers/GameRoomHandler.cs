@@ -183,6 +183,7 @@ namespace MC_server.GameRoom.Handlers
         private async Task HandleAddCoins(TcpClient client, AddCoinsRequest addCoinsRequest)
         {
             // TODO: 유저가 받은 이익이 유저 자본의 10% 이상이 되면 Payout 초기화
+            // [socket] Error handling adding coins: Unable to cast object of type 'System.Int32' to type 'System.Int64'.
             try
             {
                 // 유저의 코인 수 변경
@@ -190,11 +191,60 @@ namespace MC_server.GameRoom.Handlers
 
                 if (updatedUser != null)
                 {
-                    lock (_sessionLock)
+                    // 코인 추가 처리
+                    var updatedData = _clientManager.UpdateGameUser(client, "userTotalProfit", addCoinsRequest.AddCoinsAmount);
+
+                    // 유저의 보유 금액 당 이익이 10프로를 초과하면 해당 유저는 페이아웃 초기화
+                    if (updatedData.TryGetValue("userTotalProfit", out object? value))
                     {
-                        // 코인 추가 처리
-                        _clientManager.UpdateGameUser(client, "userTotalProfit", addCoinsRequest.AddCoinsAmount);
+                        var updatedTotalProfit = (int)value;
+                        var user = await _userTcpService.GetUserByIdAsync(addCoinsRequest.UserId);
+                        if (user != null && user.Coins > 0)
+                        {
+                            var userProfit = (decimal)updatedTotalProfit / user.Coins;
+
+                            // 10% 초과 여부 확인
+                            if (userProfit > 0.01m)
+                            {
+                                var gameUser = _clientManager.GetGameUser(client);
+                                if (gameUser != null)
+                                {
+                                    var gameSession = _gameRoomManager.GetGameSession(gameUser.RoomId);
+                                    _clientManager.ResetGameUser(client, gameSession);
+                                    Console.WriteLine("페이아웃 리셋! 이익 초과!!");
+                                    var userStateResponse = new ClientResponse
+                                    {
+                                        ResponseType = "GameUserState",
+                                        GameUserState = new GameUserState
+                                        {
+                                            CurrentPayout = gameUser.CurrentPayout,
+                                            JackpotProb = gameUser.JackpotProb,
+                                        }
+                                    };
+                                    byte[] userStateResponseData = ProtobufUtils.SerializeProtobuf(userStateResponse);
+
+                                    try
+                                    {
+                                        if (client.Connected)
+                                        {
+                                            var clientStream = client.GetStream();
+                                            clientStream.Write(userStateResponseData, 0, userStateResponseData.Length);
+                                            clientStream.Flush();
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Console.WriteLine($"[socket] Error broadcasting to client: {ex.Message}");
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("[socket] Error in HandleAddCoins: User not found or user's coin count is zero.");
+                        }
                     }
+                    
                     // 요청 클라이언트에게 응답 전송
                     var response = new ClientResponse
                     {

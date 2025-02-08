@@ -32,16 +32,19 @@ namespace MC_server.GameRoom.Managers
             _clientStates.TryRemove(client, out _);
         }
 
-        public void UpdateGameUser(TcpClient client, string property, object value)
+        public Dictionary<string, object> UpdateGameUser(TcpClient client, string property, object value)
         {
             if (_clientStates.TryGetValue(client, out var gameUser))
             {
+                var updatedData = new Dictionary<string, object>();
+
                 switch (property)
                 {
                     case "currentPayout":
                         if (value is decimal newPayout)
                         {
                             gameUser.CurrentPayout = newPayout;
+                            updatedData["currentPayout"] = gameUser.CurrentPayout;
                             Console.WriteLine($"[socket] Updated CurrentPayout for user to {gameUser.CurrentPayout}");
                         }
                         else
@@ -53,6 +56,7 @@ namespace MC_server.GameRoom.Managers
                         if (value is int addCoinsAmount)
                         {
                             gameUser.UserTotalProfit += addCoinsAmount;
+                            updatedData["userTotalProfit"] = gameUser.UserTotalProfit;
                             Console.WriteLine($"[socket] Updated UserTotalProfit for user to {gameUser.UserTotalProfit}");
                         }
                         else
@@ -64,6 +68,7 @@ namespace MC_server.GameRoom.Managers
                         if (value is int betAmount)
                         {
                             gameUser.UserTotalBetAmount += betAmount;
+                            updatedData["userTotalBetAmount"] = gameUser.UserTotalBetAmount;
                             Console.WriteLine($"[socket] Updated UserTotalBetAmount for user to {gameUser.UserTotalBetAmount}");
                         }
                         else
@@ -75,6 +80,7 @@ namespace MC_server.GameRoom.Managers
                         if (value is decimal newJackpotProb)
                         {
                             gameUser.JackpotProb = newJackpotProb;
+                            updatedData["jackpotProb"] = gameUser.JackpotProb;
                             Console.WriteLine($"[socket] Updated JackpotProb for user to {gameUser.JackpotProb}");
                         }
                         else
@@ -85,6 +91,8 @@ namespace MC_server.GameRoom.Managers
                     default:
                         throw new ArgumentException($"Property '{property}' is not a valid GameUserState property.");
                 }
+
+                return updatedData;
             }
             else
             {

@@ -12,6 +12,11 @@ namespace MC_server.GameRoom.Service
             _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         }
 
+        public async Task<User?> GetUserByIdAsync(string userId)
+        {
+            return await _userService.GetUserByIdAsync(userId);
+        }
+
         public async Task<User?> UpdateUserAsync(string userId, string property, object value)
         {
             try
