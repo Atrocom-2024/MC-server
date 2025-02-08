@@ -85,7 +85,8 @@ namespace MC_server.GameRoom.Managers
             // TODO: 잭팟이 터졌을 때 해당 룸 세션 초기화 기능 -> 다른 유저들에겐 TotalBetAmount의 10% 반환 후 페이아웃은 반환되지 않고 초기화
             Console.WriteLine($"[socket] Room {roomId}: Resetting session");
 
-            await _gameTcpService.RecordGameResult(roomId, _gameSessions[roomId]);
+            //// 게임이 초기화 될 때 초기화될 게임 세션의 데이터를 저장 -> 게임 결과 기록 목적
+            //await _gameTcpService.RecordGameResult(roomId, _gameSessions[roomId]);
 
             var clientsInRoom = _clientManager.GetClientsInRoom(roomId);
 
@@ -109,7 +110,7 @@ namespace MC_server.GameRoom.Managers
                 }
                 Console.WriteLine($"[socket] Room TotalUser {_gameSessions[roomId].TotalUser}");
 
-                await ReturnPayout(roomId); // 게임 세션 초기화 시 페이아웃 반환
+                await EndGameRewardPayment(roomId); // 게임 세션 초기화 시 페이아웃 반환
 
                 // 게임 유저 초기화 및 브로드캐스트
                 try
@@ -154,14 +155,15 @@ namespace MC_server.GameRoom.Managers
             }
         }
 
-        private async Task ReturnPayout(int roomId)
+        private async Task EndGameRewardPayment(int roomId)
         {
             var clientsInRoom = _clientManager.GetClientsInRoom(roomId);
+            var rewardCoins = 1000000;
 
             foreach (var client in clientsInRoom)
             {
                 var gameUser = _clientManager.GetGameUser(client);
-                var updatedUser = await _userTcpService.UpdateUserAsync(gameUser.UserId, "coins", (int)(gameUser.UserTotalBetAmount * gameUser.CurrentPayout));
+                var updatedUser = await _userTcpService.UpdateUserAsync(gameUser.UserId, "coins", rewardCoins);
 
                 if (updatedUser != null)
                 {
