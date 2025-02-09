@@ -139,7 +139,7 @@ namespace MC_server.GameRoom.Managers
                 // 10% 초과 여부 확인
                 if (userProfit > 0.01m)
                 {
-                    UpdateGameUser(client, "userTotalBetAmount", -gameUser.UserTotalBetAmount);
+                    gameUser.UserTotalBetAmount = 0; // 총 배팅 금액을 0으로 초기화를 시켜 payout 초기화
 
                     var newPayout = GameUserStateUtils.CalculatePayout(gameUser, gameSession);
                     UpdateGameUser(client, "currentPayout", newPayout);
