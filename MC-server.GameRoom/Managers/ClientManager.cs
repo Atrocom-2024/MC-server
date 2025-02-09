@@ -3,21 +3,33 @@ using System.Collections.Concurrent;
 
 using MC_server.GameRoom.Managers.Models;
 using MC_server.GameRoom.Utils;
+using MC_server.GameRoom.Service;
+using MC_server.GameRoom.Models;
 
 namespace MC_server.GameRoom.Managers
 {
     public class ClientManager
     {
+        private readonly UserTcpService _userTcpService;
+
         // 현재 연결된 모든 클라이언트를 관리, 각 클라이언트가 어느 룸에 연결되어 있는지 추적 -> 키는 클라이언트 객체, 값은 해당 클라이언트가 속한 룸의 id
         private readonly ConcurrentDictionary<TcpClient, GameUser> _clientStates = new ConcurrentDictionary<TcpClient, GameUser>();
 
-        public void AddClient(TcpClient client, string userId, int roomId)
+        public ClientManager(UserTcpService userTcpService)
         {
+            _userTcpService = userTcpService;
+        }
+
+        public async Task<GameUser> AddClient(TcpClient client, string userId, int roomId)
+        {
+            var user = await _userTcpService.GetUserByIdAsync(userId) ?? throw new Exception("User can not found");
+
             var gameUser = new GameUser
             {
                 UserId = userId,
                 RoomId = roomId,
                 CurrentPayout = 0.0M,
+                InitialCoins = user.Coins,
                 UserTotalProfit = 0,
                 UserTotalBetAmount = 0,
                 JackpotProb = 0.1M
@@ -25,6 +37,8 @@ namespace MC_server.GameRoom.Managers
 
             // _clientStates에 동일한 TcpClient 키를 덮어쓸 경우 예기치 않은 동작이 발생할 수 있어 메서드를 통한 추가
             _clientStates.AddOrUpdate(client, gameUser, (key, existingValue) => gameUser);
+
+            return gameUser;
         }
 
         public void RemoveClient(TcpClient client)
@@ -111,6 +125,51 @@ namespace MC_server.GameRoom.Managers
 
                 var newPayout = GameUserStateUtils.CalculatePayout(gameUser, gameSession);
                 UpdateGameUser(client, "currentPayout", newPayout);
+            }
+        }
+
+        public void CheckAndResetPayout(TcpClient client, GameSession gameSession)
+        {
+            var gameUser = GetGameUser(client);
+
+            if (gameUser.InitialCoins > 0)
+            {
+                var userProfit = (decimal)gameUser.UserTotalProfit / gameUser.InitialCoins;
+
+                // 10% 초과 여부 확인
+                if (userProfit > 0.01m)
+                {
+                    UpdateGameUser(client, "userTotalBetAmount", -gameUser.UserTotalBetAmount);
+
+                    var newPayout = GameUserStateUtils.CalculatePayout(gameUser, gameSession);
+                    UpdateGameUser(client, "currentPayout", newPayout);
+
+                    Console.WriteLine("페이아웃 리셋!!!");
+
+                    var response = new ClientResponse
+                    {
+                        ResponseType = "GameUserState",
+                        GameUserState = new GameUserState
+                        {
+                            CurrentPayout = gameUser.CurrentPayout,
+                            JackpotProb = gameUser.JackpotProb,
+                        }
+                    };
+                    byte[] responseData = ProtobufUtils.SerializeProtobuf(response);
+                    try
+                    {
+                        if (client.Connected)
+                        {
+                            var clientStream = client.GetStream();
+                            clientStream.Write(responseData, 0, responseData.Length);
+                            clientStream.Flush();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[socket] Error broadcasting to client: {ex.Message}");
+                    }
+                }
             }
         }
 

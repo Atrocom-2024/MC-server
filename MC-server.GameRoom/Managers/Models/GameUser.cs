@@ -7,6 +7,8 @@
         public int RoomId { get; set; }
 
         public decimal CurrentPayout { get; set; }
+        
+        public long InitialCoins { get; set; }
 
         public int UserTotalProfit { get; set; }
 

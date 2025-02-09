@@ -43,7 +43,7 @@ namespace MC_server.GameRoom.Handlers
                             case "JoinRoomRequest":
                                 if (request.JoinRoomData != null)
                                 {
-                                    HandleJoinRoom(client, request.JoinRoomData);
+                                    await HandleJoinRoom(client, request.JoinRoomData);
                                 }
                                 break;
                             case "BetRequest":
@@ -80,14 +80,14 @@ namespace MC_server.GameRoom.Handlers
             await Task.CompletedTask;
         }
 
-        private void HandleJoinRoom(TcpClient client, JoinRoomRequest joinRequest)
+        private async Task HandleJoinRoom(TcpClient client, JoinRoomRequest joinRequest)
         {
             try
             {
                 Console.WriteLine($"Join User ID: {joinRequest.UserId}");
 
                 // 1. 유저가 해당 룸에 Join 시 해당 룸에 유저 정보 등록
-                _clientManager.AddClient(client, joinRequest.UserId, joinRequest.RoomId);
+                await _clientManager.AddClient(client, joinRequest.UserId, joinRequest.RoomId);
 
                 // 2. 유저가 해당 룸에 Join 할 때마다 해당 게임의 TotalUser + 1
                 _gameRoomManager.IncrementTotalUser(joinRequest.RoomId);
@@ -141,7 +141,6 @@ namespace MC_server.GameRoom.Handlers
                     {
                         // 배팅 처리
                         var newPayout = GameUserStateUtils.CalculatePayout(gameUser, gameSession);
-                        Console.WriteLine($"payout 재계산됨 {newPayout}");
                         _clientManager.UpdateGameUser(client, "currentPayout", newPayout); // 해당 유저의 페이아웃 재계산
                         _clientManager.UpdateGameUser(client, "userTotalBetAmount", betRequest.BetAmount);// 배팅한 게임 유저의 총 배팅 금액을 수정
                         gameSession.TotalBetAmount += betRequest.BetAmount; // 해당 룸의 총 배팅 금액 변경
@@ -159,7 +158,6 @@ namespace MC_server.GameRoom.Handlers
                     stream.Write(responseData, 0, responseData.Length);
                     stream.Flush();
                 }
-                Console.WriteLine($"[socket] Room {roomId}: TotalBet = {gameSession.TotalBetAmount}");
 
                 var gameState = new GameState
                 {
@@ -183,7 +181,6 @@ namespace MC_server.GameRoom.Handlers
         private async Task HandleAddCoins(TcpClient client, AddCoinsRequest addCoinsRequest)
         {
             // TODO: 유저가 받은 이익이 유저 자본의 10% 이상이 되면 Payout 초기화
-            // [socket] Error handling adding coins: Unable to cast object of type 'System.Int32' to type 'System.Int64'.
             try
             {
                 // 유저의 코인 수 변경
@@ -191,59 +188,13 @@ namespace MC_server.GameRoom.Handlers
 
                 if (updatedUser != null)
                 {
+                    var gameSession = _gameRoomManager.GetGameSession(_clientManager.GetUserRoomId(client));
+
                     // 코인 추가 처리
-                    var updatedData = _clientManager.UpdateGameUser(client, "userTotalProfit", addCoinsRequest.AddCoinsAmount);
+                    _clientManager.UpdateGameUser(client, "userTotalProfit", addCoinsRequest.AddCoinsAmount);
 
-                    // 유저의 보유 금액 당 이익이 10프로를 초과하면 해당 유저는 페이아웃 초기화
-                    if (updatedData.TryGetValue("userTotalProfit", out object? value))
-                    {
-                        var updatedTotalProfit = (int)value;
-                        var user = await _userTcpService.GetUserByIdAsync(addCoinsRequest.UserId);
-                        if (user != null && user.Coins > 0)
-                        {
-                            var userProfit = (decimal)updatedTotalProfit / user.Coins;
-
-                            // 10% 초과 여부 확인
-                            if (userProfit > 0.01m)
-                            {
-                                var gameUser = _clientManager.GetGameUser(client);
-                                if (gameUser != null)
-                                {
-                                    var gameSession = _gameRoomManager.GetGameSession(gameUser.RoomId);
-                                    _clientManager.ResetGameUser(client, gameSession);
-                                    Console.WriteLine("페이아웃 리셋! 이익 초과!!");
-                                    var userStateResponse = new ClientResponse
-                                    {
-                                        ResponseType = "GameUserState",
-                                        GameUserState = new GameUserState
-                                        {
-                                            CurrentPayout = gameUser.CurrentPayout,
-                                            JackpotProb = gameUser.JackpotProb,
-                                        }
-                                    };
-                                    byte[] userStateResponseData = ProtobufUtils.SerializeProtobuf(userStateResponse);
-
-                                    try
-                                    {
-                                        if (client.Connected)
-                                        {
-                                            var clientStream = client.GetStream();
-                                            clientStream.Write(userStateResponseData, 0, userStateResponseData.Length);
-                                            clientStream.Flush();
-                                        }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Console.WriteLine($"[socket] Error broadcasting to client: {ex.Message}");
-                                    }
-                                }
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine("[socket] Error in HandleAddCoins: User not found or user's coin count is zero.");
-                        }
-                    }
+                    // 페이아웃 초기화 체크
+                    _clientManager.CheckAndResetPayout(client, gameSession);
                     
                     // 요청 클라이언트에게 응답 전송
                     var response = new ClientResponse
