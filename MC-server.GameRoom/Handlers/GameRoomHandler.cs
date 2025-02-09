@@ -180,7 +180,6 @@ namespace MC_server.GameRoom.Handlers
 
         private async Task HandleAddCoins(TcpClient client, AddCoinsRequest addCoinsRequest)
         {
-            // TODO: 유저가 받은 이익이 유저 자본의 10% 이상이 되면 Payout 초기화
             try
             {
                 // 유저의 코인 수 변경
