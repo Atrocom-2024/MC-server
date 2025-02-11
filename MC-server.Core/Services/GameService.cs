@@ -14,28 +14,28 @@ namespace MC_server.Core.Services
         }
 
         // 게임 생성
-        public async Task<GameRecord> CreateGameRecordAsync(GameRecord game)
+        public async Task<GameRecord> CreateGameRecordAsync(GameRecord gameRecord)
         {
             using var scope = _serviceScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             
             // 데이터 검증
-            if (await dbContext.Games.AnyAsync(g => g.GameId == game.GameId))
+            if (await dbContext.Games.AnyAsync(g => g.RoomId == gameRecord.RoomId))
             {
-                throw new InvalidOperationException($"Game with ID '{game.GameId}'");
+                throw new InvalidOperationException($"Game with ID '{gameRecord.RoomId}'");
             }
 
-            dbContext.Games.Add(game);
+            dbContext.Games.Add(gameRecord);
             await dbContext.SaveChangesAsync();
-            return game;
+            return gameRecord;
         }
 
         // 게임 정보 읽기
-        public async Task<GameRecord?> GetGameRecordByIdAsync(string gameId)
+        public async Task<GameRecord?> GetGameRecordByIdAsync(int roomId)
         {
             using var scope = _serviceScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            GameRecord? game = await dbContext.Games.FindAsync(gameId);
+            GameRecord? game = await dbContext.Games.FindAsync(roomId);
 
             if (game == null)
             {
@@ -53,13 +53,23 @@ namespace MC_server.Core.Services
             return await dbContext.Games.ToListAsync();
         }
 
-        public async Task DeleteGameAsymc(string gameId)
+        public async Task<GameRecord> UpdateGameRecordAsync(GameRecord gameRecord)
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            dbContext.Games.Update(gameRecord);
+            await dbContext.SaveChangesAsync();
+            return gameRecord;
+        }
+
+        public async Task DeleteGameAsymc(int roomId)
         {
             using var scope = _serviceScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             try
             {
-                GameRecord? game = await GetGameRecordByIdAsync(gameId);
+                GameRecord? game = await GetGameRecordByIdAsync(roomId);
                 if (game != null)
                 {
                     dbContext.Games.Remove(game);

@@ -27,22 +27,25 @@ namespace MC_server.GameRoom.Service
             return await _roomService.GetRoomByIdAsync(roomId);
         }
 
+        public async Task<GameRecord?> GetGameRecordByIdAsync(int roomId)
+        {
+            return await _gameService.GetGameRecordByIdAsync(roomId);
+        }
+
         public async Task RecordGameResult(int roomId, GameSession gameSession)
         {
             try
             {
                 var GameRecordData = new GameRecord
                 {
-                    GameId = gameSession.GameId,
-                    RoomType = roomId,
+                    RoomId = roomId,
                     TotalBetAmount = gameSession.TotalBetAmount,
                     TotalUser = gameSession.TotalUser,
                     TotalJackpotAmount = gameSession.TotalJackpotAmount,
                     IsJackpot = gameSession.IsJackpot,
-                    CreatedAt = gameSession.CreatedAt
                 };
 
-                await _gameService.CreateGameRecordAsync(GameRecordData);
+                await _gameService.UpdateGameRecordAsync(GameRecordData);
             }
             catch (Exception ex)
             {

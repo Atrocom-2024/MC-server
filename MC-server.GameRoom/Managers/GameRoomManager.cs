@@ -85,8 +85,8 @@ namespace MC_server.GameRoom.Managers
             // TODO: 잭팟이 터졌을 때 해당 룸 세션 초기화 기능 -> 다른 유저들에겐 TotalBetAmount의 10% 반환 후 페이아웃은 반환되지 않고 초기화
             Console.WriteLine($"[socket] Room {roomId}: Resetting session");
 
-            //// 게임이 초기화 될 때 초기화될 게임 세션의 데이터를 저장 -> 게임 결과 기록 목적
-            //await _gameTcpService.RecordGameResult(roomId, _gameSessions[roomId]);
+            // 게임이 초기화 될 때 초기화될 게임 세션의 데이터를 저장 -> 게임 결과 기록 목적
+            await _gameTcpService.RecordGameResult(roomId, _gameSessions[roomId]);
 
             var clientsInRoom = _clientManager.GetClientsInRoom(roomId);
 
