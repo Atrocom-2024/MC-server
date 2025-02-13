@@ -92,23 +92,18 @@ namespace MC_server.GameRoom.Managers
 
             // 잭팟으로 인한 초기화 로직 추가 가능
             var room = await _gameTcpService.GetRoomByIdAsync(roomId);
-            if (room != null)
+            var existingGameRecord = await _gameTcpService.GetGameRecordByIdAsync(roomId);
+
+            if (room != null && existingGameRecord != null)
             {
                 // 룸 세션 초기화 -> IsJackpot이 false이면 기존의 잭팟 금액 유지
-                if (!_gameSessions[roomId].IsJackpot) // 잭팟이 터지지 않았을 때
-                {
-                    long jackpotAmount = _gameSessions[room.RoomId].TotalJackpotAmount;
+                _gameSessions[roomId] = GameSessionUtils.CreateNewSession(room);
+                _gameSessions[roomId].TotalUser = clientsInRoom.Count();
 
-                    _gameSessions[roomId] = GameSessionUtils.CreateNewSession(room);
-                    _gameSessions[roomId].TotalJackpotAmount = jackpotAmount;
-                    _gameSessions[roomId].TotalUser = clientsInRoom.Count();
-                }
-                else
+                if (!existingGameRecord.IsJackpot) // 잭팟이 터지지 않았을 때
                 {
-                    _gameSessions[roomId] = GameSessionUtils.CreateNewSession(room);
-                    _gameSessions[roomId].TotalUser = clientsInRoom.Count();
+                    _gameSessions[roomId].TotalJackpotAmount = existingGameRecord.TotalJackpotAmount;
                 }
-                Console.WriteLine($"[socket] Room TotalUser {_gameSessions[roomId].TotalUser}");
 
                 await EndGameRewardPayment(roomId); // 게임 세션 초기화 시 페이아웃 반환
 
