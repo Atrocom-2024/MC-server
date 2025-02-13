@@ -26,6 +26,6 @@ namespace MC_server.Core.Models
         [Column("updated_at", TypeName = "datetime2")] // 데이터 타입 명시
         public DateTime UpdatedAt { get; set; }
 
-        public Room? Room { get; set; }
+        public virtual Room? Room { get; set; }
     }
 }

@@ -1,6 +1,8 @@
-﻿using MC_server.Core.Models;
+﻿using MC_server.Core;
+using MC_server.Core.Models;
 using MC_server.Core.Services;
 using MC_server.GameRoom.Managers.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MC_server.GameRoom.Service
 {
@@ -8,11 +10,13 @@ namespace MC_server.GameRoom.Service
     {
         private readonly RoomService _roomService;
         private readonly GameService _gameService;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public GameTcpService(RoomService roomService, GameService gameService)
+        public GameTcpService(RoomService roomService, GameService gameService, IServiceScopeFactory serviceScopeFactory)
         {
             _roomService = roomService ?? throw new ArgumentNullException(nameof(roomService));
             _gameService = gameService ?? throw new ArgumentNullException(nameof(gameService));
+            _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
         }
 
         public async Task<List<Room>> GetAllRoomsAsync()
@@ -36,16 +40,17 @@ namespace MC_server.GameRoom.Service
         {
             try
             {
-                var GameRecordData = new GameRecord
-                {
-                    RoomId = roomId,
-                    TotalBetAmount = gameSession.TotalBetAmount,
-                    TotalUser = gameSession.TotalUser,
-                    TotalJackpotAmount = gameSession.TotalJackpotAmount,
-                    IsJackpot = gameSession.IsJackpot,
-                };
+                using var scope = _serviceScopeFactory.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-                await _gameService.UpdateGameRecordAsync(GameRecordData);
+                var existingGameRecord = await dbContext.FindAsync<GameRecord>(roomId) ?? throw new Exception("GameRecord not found");
+
+                existingGameRecord.TotalBetAmount = gameSession.TotalBetAmount;
+                existingGameRecord.TotalUser = gameSession.TotalUser;
+                existingGameRecord.TotalJackpotAmount = gameSession.TotalJackpotAmount;
+                existingGameRecord.IsJackpot = gameSession.IsJackpot;
+
+                await dbContext.SaveChangesAsync();
             }
             catch (Exception ex)
             {
