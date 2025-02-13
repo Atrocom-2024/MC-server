@@ -37,8 +37,15 @@ namespace MC_server.GameRoom.Managers
             {
                 foreach (var room in allRooms)
                 {
+                    var gameRecord = await _gameTcpService.GetGameRecordByIdAsync(room.RoomId);
+
                     // 게임 세션 초기화
                     _gameSessions[room.RoomId] = GameSessionUtils.CreateNewSession(room);
+
+                    if (gameRecord != null)
+                    {
+                        _gameSessions[room.RoomId].TotalJackpotAmount = gameRecord.TotalJackpotAmount;
+                    }
 
                     // 타이머 초기화
                     StartRoomTimer(room.RoomId);
