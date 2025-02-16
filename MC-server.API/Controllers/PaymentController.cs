@@ -22,6 +22,13 @@ namespace MC_server.API.Controllers
         public void Process([FromBody] ProcessPaymentReq request)
         {
             Console.WriteLine(request.Receipt);
+            GooglePlayReceipt? deserializedReceipt = _paymentApiService.DeserializeReceiptAsync(request.Receipt);
+
+            if (deserializedReceipt != null)
+            {
+                Console.WriteLine(deserializedReceipt.Payload.json.purchaseToken);
+            }
+
         }
 
         [HttpPost("verify")]

@@ -17,6 +17,22 @@ namespace MC_server.API.Services
             _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         }
 
+        // JSON 영수증 파싱 메서드
+        public GooglePlayReceipt? DeserializeReceiptAsync(string receiptJson)
+        {
+            try
+            {
+                var receipt = JsonSerializer.Deserialize<GooglePlayReceipt>(receiptJson)
+                    ?? throw new JsonException("Failed to deserialize receipt JSON");
+                return receipt;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in DeserializeReceipt: {ex.Message}");
+                return null;
+            }
+        }
+
         // 영수증 검증 메서드 -> 서비스에 따라 switch 문으로 분류
         public async Task<ValidationReceiptResult> ValidationReceiptAsync(GooglePlayReceiptJson receipt, string store)
         {
