@@ -18,8 +18,14 @@ namespace MC_server.API.Controllers
             _paymentApiService = paymentApiService;
         }
 
+        [HttpPost("ver")]
+        public void Process([FromBody] ProcessPaymentReq request)
+        {
+            Console.WriteLine(request.Receipt);
+        }
+
         [HttpPost("verify")]
-        public async Task<IActionResult> ProcessPayment([FromBody] ValidationReceiptRequest request)
+        public async Task<IActionResult> ProcessPayment([FromBody] ProcessPaymentRequest request)
         {
             Console.WriteLine("[web] 결제 처리 요청");
 

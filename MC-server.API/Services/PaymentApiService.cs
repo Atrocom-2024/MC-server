@@ -14,7 +14,7 @@ namespace MC_server.API.Services
         public PaymentApiService(HttpClient httpClient, UserService userService)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-            _userService = userService ?? throw new ArgumentNullException(nameof(_userService));
+            _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         }
 
         // 영수증 검증 메서드 -> 서비스에 따라 switch 문으로 분류

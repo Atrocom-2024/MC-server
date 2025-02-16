@@ -23,5 +23,6 @@ namespace MC_server.Core
         public DbSet<User> Users { get; set; }
         public DbSet<Room> Rooms { get; set; }
         public DbSet<GameRecord> Games { get; set; }
+        public DbSet<Payment> Payments { get; set; }
     }
 }
