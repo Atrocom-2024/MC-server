@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using Google.Apis.Auth.OAuth2;
 
 using MC_server.API.DTOs.Payment;
@@ -18,13 +19,23 @@ namespace MC_server.API.Services
         }
 
         // JSON 영수증 파싱 메서드
-        public GooglePlayReceipt? DeserializeReceiptAsync(string receiptJson)
+        public GooglePlayReceiptJson2? DeserializeReceiptAsync(string receiptJson)
         {
             try
             {
-                var receipt = JsonSerializer.Deserialize<GooglePlayReceipt>(receiptJson)
-                    ?? throw new JsonException("Failed to deserialize receipt JSON");
-                return receipt;
+                // 1️⃣ 최상위 JSON 파싱
+                var googleReceiptRoot = JsonSerializer.Deserialize<GooglePlayReceipt2>(receiptJson)
+                    ?? throw new JsonException("Failed to deserialize GooglePlayReceipt.");
+
+                // 2️⃣ Payload JSON 변환
+                var googleReceiptPayload = JsonSerializer.Deserialize<GooglePlayReceiptPayload>(googleReceiptRoot.Payload)
+                    ?? throw new JsonException("Failed to deserialize GooglePlayReceiptPayload.");
+
+                // 3️⃣ Payload.json 필드도 다시 JSON 변환
+                var googleReceipt = JsonSerializer.Deserialize<GooglePlayReceiptJson2>(googleReceiptPayload.Json)
+                    ?? throw new JsonException("Failed to deserialize GooglePlayReceiptJson.");
+
+                return googleReceipt;
             }
             catch (Exception ex)
             {
@@ -206,8 +217,58 @@ namespace MC_server.API.Services
     {
         public string orderId { get; set; } = string.Empty;
         public string packageName { get; set; } = string.Empty;
+        public string purchaseTime { get; set; } = string.Empty;
+        public string purchaseState { get; set; } = string.Empty;
         public string productId { get; set; } = string.Empty;
         public string purchaseToken { get; set; } = string.Empty;
+    }
+
+    public class GooglePlayReceipt2
+    {
+        [JsonPropertyName("Payload")]
+        public string Payload { get; set; } = string.Empty;
+
+        [JsonPropertyName("Store")]
+        public string Store { get; set; } = string.Empty;
+
+        [JsonPropertyName("TransactionID")]
+        public string TransactionID { get; set; } = string.Empty;
+    }
+
+    public class GooglePlayReceiptPayload
+    {
+        [JsonPropertyName("json")]
+        public string Json { get; set; } = string.Empty;
+
+        [JsonPropertyName("signature")]
+        public string Signature { get; set; } = string.Empty;
+    }
+
+    public class GooglePlayReceiptJson2
+    {
+        [JsonPropertyName("orderId")]
+        public string OrderId { get; set; } = string.Empty;
+
+        [JsonPropertyName("packageName")]
+        public string PackageName { get; set; } = string.Empty;
+
+        [JsonPropertyName("productId")]
+        public string ProductId { get; set; } = string.Empty;
+
+        [JsonPropertyName("purchaseTime")]
+        public long PurchaseTime { get; set; }
+
+        [JsonPropertyName("purchaseState")]
+        public int PurchaseState { get; set; }
+
+        [JsonPropertyName("purchaseToken")]
+        public string PurchaseToken { get; set; } = string.Empty;
+
+        [JsonPropertyName("quantity")]
+        public int Quantity { get; set; }
+
+        [JsonPropertyName("acknowledged")]
+        public bool Acknowledged { get; set; }
     }
 
     public class GooglePlayValidationResponse
