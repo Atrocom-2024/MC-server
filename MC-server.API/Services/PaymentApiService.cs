@@ -19,10 +19,10 @@ namespace MC_server.API.Services
         }
 
         // JSON 영수증 파싱 메서드
-        public GooglePlayReceiptJson2 DeserializeReceiptAsync(string receiptJson)
+        public GooglePlayReceiptJson DeserializeReceiptAsync(string receiptJson)
         {
             // 1️⃣ 최상위 JSON 파싱
-            var googleReceiptRoot = JsonSerializer.Deserialize<GooglePlayReceipt2>(receiptJson)
+            var googleReceiptRoot = JsonSerializer.Deserialize<GooglePlayReceipt>(receiptJson)
                 ?? throw new JsonException("Failed to deserialize GooglePlayReceipt.");
 
             // 2️⃣ Payload JSON 변환
@@ -30,7 +30,7 @@ namespace MC_server.API.Services
                 ?? throw new JsonException("Failed to deserialize GooglePlayReceiptPayload.");
 
             // 3️⃣ Payload.json 필드도 다시 JSON 변환
-            var googleReceipt = JsonSerializer.Deserialize<GooglePlayReceiptJson2>(googleReceiptPayload.Json)
+            var googleReceipt = JsonSerializer.Deserialize<GooglePlayReceiptJson>(googleReceiptPayload.Json)
                 ?? throw new JsonException("Failed to deserialize GooglePlayReceiptJson.");
 
             return googleReceipt;
@@ -47,81 +47,8 @@ namespace MC_server.API.Services
                     throw new ArgumentException("Unsupported store type");
             }
         }
-        public async Task<ValidationReceiptResult> ValidationReceiptAsync2(GooglePlayReceiptJson2 receipt, string store)
-        {
-            switch (store.ToLower())
-            {
-                case "google":
-                    return await ValidationGooglePlayReceiptAsync2(receipt);
-                default:
-                    throw new ArgumentException("Unsupported store type");
-            }
-        }
 
-        // 구글 플레이 영수증 검증 메서드
         public async Task<ValidationReceiptResult> ValidationGooglePlayReceiptAsync(GooglePlayReceiptJson receipt)
-        {
-            // 1. 액세스 토큰 가져오기
-            string accessToken = await GetAccessTokenAsync();
-
-            if (string.IsNullOrEmpty(accessToken))
-            {
-                Console.WriteLine("[web] Access Token을 가져오는 데 실패했습니다.");
-                return new ValidationReceiptResult
-                {
-                    IsValid = false,
-                    TransactionId = receipt.orderId,
-                    PurchasedCoins = 0
-                };
-            }
-
-            // 2. Google Play API 호출 URL 생성
-            string url = $"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{receipt.packageName}/purchases/products/{receipt.productId}/tokens/{receipt.purchaseToken}";
-
-            // 3. HTTP 요청 생성(Authorization 헤더 포함)
-            using var request = new HttpRequestMessage(HttpMethod.Get, url);
-            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-
-            // 4. 구글 서버로 요청
-            HttpResponseMessage response = await _httpClient.SendAsync(request);
-            string responseContent = await response.Content.ReadAsStringAsync();
-
-            // 요청 실패 처리
-            if (!response.IsSuccessStatusCode)
-            {
-                Console.WriteLine("[web] 영수증 검증 요청에 실패했습니다.");
-                return new ValidationReceiptResult
-                {
-                    IsValid = false,
-                    TransactionId = receipt.orderId,
-                    PurchasedCoins = 0
-                };
-            }
-
-            // 5. 응답 JSON 파싱
-            var validationResponse = JsonSerializer.Deserialize<GooglePlayValidationResponse>(responseContent)
-                ?? throw new JsonException(responseContent);
-
-            // 구매 상태 체크
-            if (validationResponse.purchaseState != 0) // 구매되지 않았을 때
-            {
-                Console.WriteLine("[web] 구매되지 않은 상품입니다.");
-                return new ValidationReceiptResult
-                {
-                    IsValid = false,
-                    TransactionId = receipt.orderId,
-                    PurchasedCoins = 0
-                };
-            }
-
-            return new ValidationReceiptResult
-            {
-                IsValid = true,
-                TransactionId = receipt.orderId,
-                PurchasedCoins = CalculatePurchasedCoins(receipt.productId)
-            };
-        }
-        public async Task<ValidationReceiptResult> ValidationGooglePlayReceiptAsync2(GooglePlayReceiptJson2 receipt)
         {
             // 1. 액세스 토큰 가져오기
             string accessToken = await GetAccessTokenAsync();
@@ -266,29 +193,6 @@ namespace MC_server.API.Services
 
     public class GooglePlayReceipt
     {
-        public string Store { get; set; } = string.Empty;
-        public string TransactionID { get; set; } = string.Empty;
-        public required GooglePlayPayload Payload { get; set; }
-    }
-
-    public class GooglePlayPayload
-    {
-        public required GooglePlayJson json { get; set; }
-        public string signature { get; set; } = string.Empty;
-    }
-
-    public class GooglePlayJson
-    {
-        public string orderId { get; set; } = string.Empty;
-        public string packageName { get; set; } = string.Empty;
-        public string purchaseTime { get; set; } = string.Empty;
-        public string purchaseState { get; set; } = string.Empty;
-        public string productId { get; set; } = string.Empty;
-        public string purchaseToken { get; set; } = string.Empty;
-    }
-
-    public class GooglePlayReceipt2
-    {
         [JsonPropertyName("Payload")]
         public string Payload { get; set; } = string.Empty;
 
@@ -308,7 +212,7 @@ namespace MC_server.API.Services
         public string Signature { get; set; } = string.Empty;
     }
 
-    public class GooglePlayReceiptJson2
+    public class GooglePlayReceiptJson
     {
         [JsonPropertyName("orderId")]
         public string OrderId { get; set; } = string.Empty;

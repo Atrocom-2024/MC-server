@@ -18,64 +18,6 @@ namespace MC_server.API.Controllers
             _paymentApiService = paymentApiService;
         }
 
-        [HttpPost("ver")]
-        public async Task<IActionResult> Process([FromBody] ProcessPaymentReq request)
-        {
-            Console.WriteLine("[web] 결제 처리 요청");
-
-            if (request == null || request.Receipt == null || string.IsNullOrEmpty(request.UserId) || string.IsNullOrWhiteSpace(request.Store))
-            {
-                Console.WriteLine("[web] Invalid request payload");
-                return BadRequest("Invalid request payload.");
-            }
-
-            try
-            {
-                // 1. 영수증 파싱
-                GooglePlayReceiptJson2? deserializedReceipt = _paymentApiService.DeserializeReceiptAsync(request.Receipt);
-                
-                // 2. 영수증 검증
-                var validationResult = await _paymentApiService.ValidationReceiptAsync2(deserializedReceipt, request.Store);
-
-                if (!validationResult.IsValid)
-                {
-                    return BadRequest(new ProcessPaymentResponse
-                    {
-                        IsProcessed = validationResult.IsValid,
-                        TranscationId = validationResult.TransactionId,
-                        ProcessedResultCoins = 0,
-                        Message = "Invalid receipt.",
-                    });
-                }
-
-                // 3. 사용자에게 코인 지급 처리
-                var processReceiptResult = await _paymentApiService.ProcessReceiptAsync(request.UserId, validationResult.PurchasedCoins);
-
-                if (!processReceiptResult.IsProcessed)
-                {
-                    return StatusCode(500, new ProcessPaymentResponse
-                    {
-                        IsProcessed = processReceiptResult.IsProcessed,
-                        TranscationId = validationResult.TransactionId,
-                        ProcessedResultCoins = 0,
-                        Message = "An unexpected error occurred. Please try again later"
-                    });
-                }
-
-                return Ok(new ProcessPaymentResponse
-                {
-                    IsProcessed = processReceiptResult.IsProcessed,
-                    TranscationId = validationResult.TransactionId,
-                    ProcessedResultCoins = processReceiptResult.ProcessedResultCoins,
-                    Message = "Payment successfully.",
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred while validating the receipt", error = ex.Message });
-            }
-        }
-
         [HttpPost("verify")]
         public async Task<IActionResult> ProcessPayment([FromBody] ProcessPaymentRequest request)
         {
@@ -89,12 +31,15 @@ namespace MC_server.API.Controllers
 
             try
             {
-                // 1. 영수증 검증
-                var validationResult = await _paymentApiService.ValidationReceiptAsync(request.Receipt, request.Store); 
+                // 1. 영수증 파싱
+                GooglePlayReceiptJson deserializedReceipt = _paymentApiService.DeserializeReceiptAsync(request.Receipt);
+                
+                // 2. 영수증 검증
+                var validationResult = await _paymentApiService.ValidationReceiptAsync(deserializedReceipt, request.Store);
 
                 if (!validationResult.IsValid)
                 {
-                    return BadRequest(new ProcessPaymentResponse 
+                    return BadRequest(new ProcessPaymentResponse
                     {
                         IsProcessed = validationResult.IsValid,
                         TranscationId = validationResult.TransactionId,
@@ -103,7 +48,7 @@ namespace MC_server.API.Controllers
                     });
                 }
 
-                // 2. 사용자에게 코인 지급 처리
+                // 3. 사용자에게 코인 지급 처리
                 var processReceiptResult = await _paymentApiService.ProcessReceiptAsync(request.UserId, validationResult.PurchasedCoins);
 
                 if (!processReceiptResult.IsProcessed)
