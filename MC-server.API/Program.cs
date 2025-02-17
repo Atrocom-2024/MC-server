@@ -1,5 +1,6 @@
 using DotNetEnv;
 using MC_server.API.Extensions;
+using MC_server.API.Middleware;
 using MC_server.Core.Extensions;
 
 namespace MC_server.API
@@ -15,7 +16,6 @@ namespace MC_server.API
 
             // Add services to the container.
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
@@ -34,10 +34,12 @@ namespace MC_server.API
                 app.UseSwaggerUI();
             }
 
+            // 예외 처리 미들웨어 추가 (가장 먼저 실행)
+            app.UseMiddleware<GlobalExceptionMiddleware>();
+
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
-
 
             app.MapControllers();
 

@@ -2,6 +2,7 @@
 using MC_server.API.Utils;
 using MC_server.Core.Models;
 using MC_server.Core.Services;
+using System.ComponentModel.DataAnnotations;
 
 namespace MC_server.API.Services
 {
@@ -18,27 +19,22 @@ namespace MC_server.API.Services
             _userService = userService;
         }
 
-        public async Task<object?> GetUserDetailsForApiAsync(string userId)
+        public async Task<User> GetUserDetailsForApiAsync(string userId)
         {
             // Core 서비스 호출
-            User? user = await _userService.GetUserByIdAsync(userId);
-
-            if (user == null)
-            {
-                return null;
-            }
+            var user = await _userService.GetUserByIdAsync(userId) ?? throw new KeyNotFoundException($"User with ID '{userId}' not found.");
 
             // API에 특화된 데이터 반환
-            return new { user.UserId, user.Nickname, user.Level, user.Coins };
+            //return new { user.UserId, user.Nickname, user.Level, user.Coins };
+            return user;
         }
 
-        public async Task<object> CreateUserAsync(UserCreateRequest request)
+        public async Task<User> CreateUserAsync(UserCreateRequest request)
         {
-            // provider가 google일 경우 추가 데이터 검증
-            //if (provider.ToLower() == "google" && (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(name)))
-            //{
-            //    throw new ArgumentException("For Google provider, email and name are required");
-            //}
+            if (string.IsNullOrEmpty(request.UserId) || string.IsNullOrEmpty(request.Provider))
+            {
+                throw new ValidationException("UserId and Provider are required.");
+            }
 
             // 유저 중복 검증
             if (await _userService.GetUserByIdAsync(request.UserId) != null)
@@ -46,22 +42,8 @@ namespace MC_server.API.Services
                 throw new InvalidOperationException($"User with ID '{request.UserId}' already exists.");
             }
 
-            //if (request.Provider == "google" && request.DeviceId != null)
-            //{
-            //    User? googleUser = await _userService.GetUserByIdAsync(request.DeviceId);
-
-            //    if (googleUser != null)
-            //    {
-            //        googleUser.UserId = request.UserId;
-            //        googleUser.Provider = request.Provider;
-
-            //        // 변경 사항 저장
-            //        return await _userService.UpdateUserAsync(googleUser);
-            //    }
-            //}
-
             // 유저 생성
-            User user = new User
+            var user = new User
             {
                 UserId = request.UserId,
                 Provider = request.Provider,
@@ -79,61 +61,48 @@ namespace MC_server.API.Services
         public async Task<object?> UpdateUserAsync(string userId, UserUpdateRequest request)
         {
             // 유저 정보 가져오기
-            try
+            User user = await GetUserDetailsForApiAsync(userId);
+
+            var updatedFields = new Dictionary<string, object>();
+
+            // 닉네임 업데이트
+            if (!string.IsNullOrWhiteSpace(request.Nickname))
             {
-                User? user = await _userService.GetUserByIdAsync(userId);
-
-                if (user == null)
+                // 닉네임 중복 확인
+                if (await _userService.IsNicknameTakenAsync(request.Nickname))
                 {
-                    return null;
+                    throw new InvalidOperationException("Nickname is already taken");
                 }
 
-                var updatedFields = new Dictionary<string, object>();
-
-                // 닉네임 업데이트
-                if (!string.IsNullOrWhiteSpace(request.Nickname))
-                {
-                    // 닉네임 중복 확인
-                    if (await _userService.IsNicknameTakenAsync(request.Nickname))
-                    {
-                        throw new InvalidOperationException("Nickname is already taken");
-                    }
-
-                    user.Nickname = request.Nickname;
-                    updatedFields["nickname"] = request.Nickname;
-                }
-
-                // 코인 업데이트
-                if (request.AddCoins.HasValue)
-                {
-                    user.Coins += request.AddCoins.Value;
-                    updatedFields["addCoins"] = user.Coins;
-                }
-
-                // 레벨 업데이트
-                if (request.Level.HasValue)
-                {
-                    user.Level = request.Level.Value;
-                    updatedFields["level"] = request.Level.Value;
-                }
-
-                // 경험치 업데이트
-                if (request.Experience.HasValue)
-                {
-                    user.Experience = request.Experience.Value;
-                    updatedFields["experience"] = request.Experience.Value;
-                }
-
-                // 변경 사항 저장
-                await _userService.UpdateUserAsync(user);
-
-                return updatedFields;
+                user.Nickname = request.Nickname;
+                updatedFields["nickname"] = request.Nickname;
             }
-            catch (Exception ex)
+
+            // 코인 업데이트
+            if (request.AddCoins.HasValue)
             {
-                Console.WriteLine($"Error in UpdateUserAsync: {ex.Message}");
-                return new { Error = "An unexpected error occurred.", ex.Message };
+                user.Coins += request.AddCoins.Value;
+                updatedFields["addCoins"] = user.Coins;
             }
+
+            // 레벨 업데이트
+            if (request.Level.HasValue)
+            {
+                user.Level = request.Level.Value;
+                updatedFields["level"] = request.Level.Value;
+            }
+
+            // 경험치 업데이트
+            if (request.Experience.HasValue)
+            {
+                user.Experience = request.Experience.Value;
+                updatedFields["experience"] = request.Experience.Value;
+            }
+
+            // 변경 사항 저장
+            await _userService.UpdateUserAsync(user);
+
+            return updatedFields;
         }
     }
 }

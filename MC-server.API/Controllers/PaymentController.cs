@@ -2,6 +2,7 @@
 
 using MC_server.API.DTOs.Payment;
 using MC_server.API.Services;
+using System.ComponentModel.DataAnnotations;
 
 namespace MC_server.API.Controllers
 {
@@ -9,12 +10,10 @@ namespace MC_server.API.Controllers
     [Route("/api/payments")]
     public class PaymentController: ControllerBase
     {
-        private readonly UserApiService _userApiService;
         private readonly PaymentApiService _paymentApiService;
 
-        public PaymentController(UserApiService userApiService, PaymentApiService paymentApiService)
+        public PaymentController(PaymentApiService paymentApiService)
         {
-            _userApiService = userApiService;
             _paymentApiService = paymentApiService;
         }
 
@@ -25,55 +24,47 @@ namespace MC_server.API.Controllers
 
             if (request == null || request.Receipt == null || string.IsNullOrEmpty(request.UserId) || string.IsNullOrWhiteSpace(request.Store))
             {
-                Console.WriteLine("[web] Invalid request payload");
-                return BadRequest("Invalid request payload.");
+                throw new ValidationException("Receipt and UserId and Store are required.");
             }
 
-            try
+            // 1. 영수증 파싱
+            GooglePlayReceiptJson deserializedReceipt = _paymentApiService.DeserializeReceiptAsync(request.Receipt);
+            
+            // 2. 영수증 검증
+            var validationResult = await _paymentApiService.ValidationReceiptAsync(deserializedReceipt, request.Store);
+
+            if (!validationResult.IsValid)
             {
-                // 1. 영수증 파싱
-                GooglePlayReceiptJson deserializedReceipt = _paymentApiService.DeserializeReceiptAsync(request.Receipt);
-                
-                // 2. 영수증 검증
-                var validationResult = await _paymentApiService.ValidationReceiptAsync(deserializedReceipt, request.Store);
-
-                if (!validationResult.IsValid)
+                return BadRequest(new ProcessPaymentResponse
                 {
-                    return BadRequest(new ProcessPaymentResponse
-                    {
-                        IsProcessed = validationResult.IsValid,
-                        TranscationId = validationResult.TransactionId,
-                        ProcessedResultCoins = 0,
-                        Message = "Invalid receipt.",
-                    });
-                }
+                    IsProcessed = validationResult.IsValid,
+                    TranscationId = validationResult.TransactionId,
+                    ProcessedResultCoins = 0,
+                    Message = "Invalid receipt.",
+                });
+            }
 
-                // 3. 사용자에게 코인 지급 처리
-                var processReceiptResult = await _paymentApiService.ProcessReceiptAsync(request.UserId, validationResult.PurchasedCoins);
+            // 3. 사용자에게 코인 지급 처리
+            var processReceiptResult = await _paymentApiService.ProcessReceiptAsync(request.UserId, validationResult.PurchasedCoins);
 
-                if (!processReceiptResult.IsProcessed)
-                {
-                    return StatusCode(500, new ProcessPaymentResponse
-                    {
-                        IsProcessed = processReceiptResult.IsProcessed,
-                        TranscationId = validationResult.TransactionId,
-                        ProcessedResultCoins = 0,
-                        Message = "An unexpected error occurred. Please try again later"
-                    });
-                }
-
-                return Ok(new ProcessPaymentResponse
+            if (!processReceiptResult.IsProcessed)
+            {
+                return StatusCode(500, new ProcessPaymentResponse
                 {
                     IsProcessed = processReceiptResult.IsProcessed,
                     TranscationId = validationResult.TransactionId,
-                    ProcessedResultCoins = processReceiptResult.ProcessedResultCoins,
-                    Message = "Payment successfully.",
+                    ProcessedResultCoins = 0,
+                    Message = "An unexpected error occurred. Please try again later"
                 });
             }
-            catch (Exception ex)
+
+            return Ok(new ProcessPaymentResponse
             {
-                return StatusCode(500, new { message = "An error occurred while validating the receipt", error = ex.Message });
-            }
+                IsProcessed = processReceiptResult.IsProcessed,
+                TranscationId = validationResult.TransactionId,
+                ProcessedResultCoins = processReceiptResult.ProcessedResultCoins,
+                Message = "Payment successfully.",
+            });
         }
     }
 

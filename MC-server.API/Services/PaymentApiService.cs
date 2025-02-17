@@ -2,7 +2,6 @@
 using System.Text.Json.Serialization;
 using Google.Apis.Auth.OAuth2;
 
-using MC_server.API.DTOs.Payment;
 using MC_server.Core.Services;
 
 namespace MC_server.API.Services
@@ -44,7 +43,7 @@ namespace MC_server.API.Services
                 case "google":
                     return await ValidationGooglePlayReceiptAsync(receipt);
                 default:
-                    throw new ArgumentException("Unsupported store type");
+                    throw new NotSupportedException($"Unsupported store type: {store}");
             }
         }
 
@@ -52,6 +51,11 @@ namespace MC_server.API.Services
         {
             // 1. 액세스 토큰 가져오기
             string accessToken = await GetAccessTokenAsync();
+
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                throw new InvalidOperationException("Failed to retrieve access token.");
+            }
 
             if (string.IsNullOrEmpty(accessToken))
             {
@@ -78,13 +82,7 @@ namespace MC_server.API.Services
             // 요청 실패 처리
             if (!response.IsSuccessStatusCode)
             {
-                Console.WriteLine("[web] 영수증 검증 요청에 실패했습니다.");
-                return new ValidationReceiptResult
-                {
-                    IsValid = false,
-                    TransactionId = receipt.OrderId,
-                    PurchasedCoins = 0
-                };
+                throw new HttpRequestException($"Receipt validation request failed. StatusCode: {response.StatusCode}, Response: {await response.Content.ReadAsStringAsync()}");
             }
 
             // 5. 응답 JSON 파싱
@@ -94,13 +92,7 @@ namespace MC_server.API.Services
             // 구매 상태 체크
             if (validationResponse.purchaseState != 0) // 구매되지 않았을 때
             {
-                Console.WriteLine("[web] 구매되지 않은 상품입니다.");
-                return new ValidationReceiptResult
-                {
-                    IsValid = false,
-                    TransactionId = receipt.OrderId,
-                    PurchasedCoins = 0
-                };
+                throw new InvalidOperationException("구매되지 않은 상품입니다.");
             }
 
             return new ValidationReceiptResult
@@ -113,59 +105,43 @@ namespace MC_server.API.Services
 
         public async Task<ProcessReceiptResult> ProcessReceiptAsync(string userId, int addCoinsAmount)
         {
-            try
-            {
-                var user = await _userService.GetUserByIdAsync(userId);
+            var user = await _userService.GetUserByIdAsync(userId) ?? throw new KeyNotFoundException($"User with ID '{userId}' not found.");
 
-                if (user == null)
-                {
-                    return new ProcessReceiptResult { IsProcessed = false, ProcessedResultCoins = 0 };
-                }
-
-                user.Coins += addCoinsAmount;
-                await _userService.UpdateUserAsync(user);
-                return new ProcessReceiptResult { IsProcessed = true, ProcessedResultCoins = user.Coins };
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in ProcessPayment: {ex.Message}");
-                return new ProcessReceiptResult { IsProcessed= false, ProcessedResultCoins = 0 };
-            }
+            user.Coins += addCoinsAmount;
+            await _userService.UpdateUserAsync(user);
+            return new ProcessReceiptResult { IsProcessed = true, ProcessedResultCoins = user.Coins };
         }
 
         private static async Task<string> GetAccessTokenAsync()
         {
-            try
+            // 1. 환경변수에서 JSON 키 파일 내용 가져오기
+            string? jsonKeyFilePath = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
+
+            if (string.IsNullOrEmpty(jsonKeyFilePath))
             {
-                // 환경변수에서 JSON 키 파일 내용 가져오기
-                string? jsonKeyFilePath = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
-
-                if (string.IsNullOrEmpty(jsonKeyFilePath))
-                {
-                    throw new Exception("환경변수를 불러오지 못했습니다.");
-                }
-
-                // JSON 키를 메모리 스트림으로 변환하여 GoogleCredentials 로드
-                using var stream = new FileStream(jsonKeyFilePath, FileMode.Open, FileAccess.Read);
-
-                var credentials = GoogleCredential.FromStream(stream)
-                    .CreateScoped(new[] { "https://www.googleapis.com/auth/androidpublisher" });
-
-                var serviceAccountEmail = ((ServiceAccountCredential)credentials.UnderlyingCredential).Id;
-                Console.WriteLine($"현재 인증된 서비스 계정 이메일: {serviceAccountEmail}");
-
-                // 액세스 토큰 요청
-                return await credentials.UnderlyingCredential.GetAccessTokenForRequestAsync();
+                throw new InvalidOperationException("환경변수를 불러오지 못했습니다.");
             }
-            catch (Exception ex)
+
+            // 2. JSON 키 파일 존재 여부 확인
+            if (!File.Exists(jsonKeyFilePath))
             {
-                Console.WriteLine($"토큰 요청 중 오류 발생: {ex.Message}");
-                Console.WriteLine($"상세 오류: {ex.StackTrace}");
-                return string.Empty;
+                throw new FileNotFoundException($"Google 서비스 계정 JSON 키 파일을 찾을 수 없습니다: {jsonKeyFilePath}");
             }
+
+            // 3. JSON 키를 메모리 스트림으로 변환하여 GoogleCredentials 로드
+            using var stream = new FileStream(jsonKeyFilePath, FileMode.Open, FileAccess.Read);
+
+            var credentials = GoogleCredential.FromStream(stream)
+                .CreateScoped(new[] { "https://www.googleapis.com/auth/androidpublisher" });
+
+            var serviceAccountEmail = ((ServiceAccountCredential)credentials.UnderlyingCredential).Id;
+            Console.WriteLine($"현재 인증된 서비스 계정 이메일: {serviceAccountEmail}");
+
+            // 액세스 토큰 요청
+            return await credentials.UnderlyingCredential.GetAccessTokenForRequestAsync();
         }
 
-        private int CalculatePurchasedCoins(string productId)
+        private static int CalculatePurchasedCoins(string productId)
         {
             return productId switch
             {

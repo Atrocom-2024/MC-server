@@ -28,27 +28,10 @@ namespace MC_server.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            // 필수 필드 검증
-            if (string.IsNullOrEmpty(request.UserId) || string.IsNullOrEmpty(request.Provider))
-            {
-                throw new ArgumentException("UserId and Provider are required.");
-            }
+            // UserApiService 호출
+            User createdUser = (User)await _userApiService.CreateUserAsync(request);
 
-            try
-            {
-                // UserApiService 호출
-                User createdUser = (User)await _userApiService.CreateUserAsync(request);
-
-                return CreatedAtAction(nameof(GetUserById), new { userId = createdUser.UserId }, createdUser);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new
-                {
-                    controller = nameof(CreateUser),
-                    message = ex.Message
-                });
-            }
+            return CreatedAtAction(nameof(GetUserById), new { userId = createdUser.UserId }, createdUser);
         }
 
         // 유저 정보 읽기
@@ -57,27 +40,10 @@ namespace MC_server.API.Controllers
         {
             Console.WriteLine("[web] 유저 정보 요청 발생");
 
-            try
-            {
-                // UserApiService를 호출
-                var userDetails = await _userApiService.GetUserDetailsForApiAsync(userId);
+            // UserApiService를 호출
+            var userDetails = await _userApiService.GetUserDetailsForApiAsync(userId);
 
-                if (userDetails == null)
-                {
-                    return NotFound();
-                }
-
-                return Ok(userDetails);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in GetUserById: {ex.Message}");
-                return StatusCode(500, new
-                {
-                    controller = nameof(GetUserById),
-                    message = ex.Message
-                });
-            }
+            return Ok(userDetails);
         }
 
         // 유저 정보 수정
@@ -97,29 +63,18 @@ namespace MC_server.API.Controllers
                 });
             }
 
-            try
+            // 유저 업데이트 요청 처리
+            var updatedFields = await _userApiService.UpdateUserAsync(userId, request);
+            if (updatedFields == null)
             {
-                // 유저 업데이트 요청 처리
-                var updatedFields = await _userApiService.UpdateUserAsync(userId, request);
-                if (updatedFields == null)
-                {
-                    return NotFound(new { message = "User not found" });
-                }
+                return NotFound(new { message = "User not found" });
+            }
 
-                return Ok(new
-                {
-                    message = "User updated successfully",
-                    updatedFields
-                });
-            }
-            catch (Exception ex)
+            return Ok(new
             {
-                return StatusCode(500, new
-                {
-                    controller = nameof(UserController),
-                    message = ex.Message
-                });
-            }
+                message = "User updated successfully",
+                updatedFields
+            });
         }
     }
 }

@@ -42,11 +42,6 @@ namespace MC_server.Core.Services
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             User? user = await dbContext.Users.FindAsync(userId);
 
-            if (user == null)
-            {
-                return null;
-            }
-
             return user;
         }
 
@@ -67,19 +62,12 @@ namespace MC_server.Core.Services
             using var scope = _serviceScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-            try
-            {
-                User? user = await GetUserByIdAsync(userId);
+            User? user = await GetUserByIdAsync(userId);
 
-                if (user != null)
-                {
-                    dbContext.Users.Remove(user);
-                    await dbContext.SaveChangesAsync();
-                }
-            }
-            catch (Exception ex)
+            if (user != null)
             {
-                Console.WriteLine($"Error in DeleteUserAsync: {ex.Message}");
+                dbContext.Users.Remove(user);
+                await dbContext.SaveChangesAsync();
             }
         }
 
