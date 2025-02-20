@@ -8,7 +8,7 @@ namespace MC_server.API.Controllers
 {
     [ApiController]
     [Route("/api/payments")]
-    public class PaymentController: ControllerBase
+    public class PaymentController : ControllerBase
     {
         private readonly PaymentApiService _paymentApiService;
 

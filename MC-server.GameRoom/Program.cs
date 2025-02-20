@@ -13,14 +13,12 @@ namespace MC_server.GameRoom
     public class Program
     {
         // 의존성 필드 선언
-        private readonly ClientManager _clientManager;
         private readonly GameRoomManager _gameRoomManager;
         private readonly GameRoomHandler _gameRoomHandler;
 
         // 의존성 주입 생성자
-        public Program(ClientManager clientManager, GameRoomManager gameRoomManager, GameRoomHandler gameRoomHandler)
+        public Program(GameRoomManager gameRoomManager, GameRoomHandler gameRoomHandler)
         {
-            _clientManager = clientManager ?? throw new ArgumentNullException(nameof(clientManager));
             _gameRoomManager = gameRoomManager ?? throw new ArgumentNullException(nameof(gameRoomManager));
             _gameRoomHandler = gameRoomHandler ?? throw new ArgumentNullException(nameof(gameRoomHandler));
         }
@@ -59,11 +57,11 @@ namespace MC_server.GameRoom
             {
                 try
                 {
-                    // 3. 클라이언트 연결 대기
+                    // 2. 클라이언트 연결 대기
                     TcpClient client = await listener.AcceptTcpClientAsync();
                     Console.WriteLine("[socket] Client conncected!");
 
-                    // 4. 게임 룸 처리 시작
+                    // 3. 게임 룸 처리 시작
                     _ = _gameRoomHandler.HandleGameRoomAsync(client);
                 }
                 catch (Exception ex)
