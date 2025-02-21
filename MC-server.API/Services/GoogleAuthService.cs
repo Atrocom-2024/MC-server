@@ -18,12 +18,14 @@ namespace MC_server.API.Services
             if (string.IsNullOrWhiteSpace(authCode))
                 throw new ArgumentException("Auth code cannot be null or empty.", nameof(authCode));
 
-            var googleClientId = Environment.GetEnvironmentVariable("GOOGLE_AUTH_CLIENT_ID") ?? throw new InvalidOperationException("환경변수를 불러오지 못했습니다."); // Client ID만 사용
+            var googleClientId = Environment.GetEnvironmentVariable("GOOGLE_AUTH_CLIENT_ID") ?? throw new InvalidOperationException("환경변수를 불러오지 못했습니다.");
+            var googleClientSecret = Environment.GetEnvironmentVariable("GOOGLE_AUTH_CLIENT_SECRET") ?? throw new InvalidOperationException("환경변수를 불러오지 못했습니다.");
 
             var requestData = new Dictionary<string, string>
             {
                 { "code", authCode },
                 { "client_id", googleClientId },
+                { "client_secret", googleClientSecret },
                 { "redirect_uri", "" }, // 모바일 앱은 redirect_uri 필요 없음
                 { "grant_type", "authorization_code" }
             };
