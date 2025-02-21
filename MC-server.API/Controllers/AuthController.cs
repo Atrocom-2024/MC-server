@@ -18,18 +18,16 @@ namespace MC_server.API.Controllers
             _userApiService = userApiService ?? throw new ArgumentNullException(nameof(UserApiService));
         }
 
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        [HttpPost("google")]
+        public async Task<IActionResult> GoogleAuth([FromBody] GoogleAuthRequest request)
         {
             if (request == null || string.IsNullOrEmpty(request.AuthCode))
             {
                 throw new ValidationException("AuthCode is required.");
             }
 
-            // // 1. Google Auth Code 검증 (토큰 교환)
+            // 1. Google Auth Code 검증 (토큰 교환)
             var tokenResponse = await _googleAuthService.ExchangeAuthCodeForTokenAsync(request.AuthCode);
-
-
 
             // 2. 토큰을 이용해 사용자 정보 가져오기
             var user = await _userApiService.GetUserDetailsForApiAsync(tokenResponse.IdToken);

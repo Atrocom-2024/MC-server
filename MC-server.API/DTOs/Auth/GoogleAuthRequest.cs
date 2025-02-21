@@ -1,6 +1,6 @@
 ﻿namespace MC_server.API.DTOs.Auth
 {
-    public class LoginRequest
+    public class GoogleAuthRequest
     {
         public string Provider { get; set; } = string.Empty;
         public string UserId { get; set; } = string.Empty;
