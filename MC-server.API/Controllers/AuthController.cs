@@ -15,7 +15,7 @@ namespace MC_server.API.Controllers
         public AuthController(GoogleAuthService googleAuthService, UserApiService userApiService)
         {
             _googleAuthService = googleAuthService ?? throw new ArgumentNullException(nameof(googleAuthService));
-            _userApiService = userApiService ?? throw new ArgumentNullException(nameof(UserApiService));
+            _userApiService = userApiService ?? throw new ArgumentNullException(nameof(userApiService));
         }
 
         [HttpPost("google")]
@@ -30,7 +30,7 @@ namespace MC_server.API.Controllers
             var tokenResponse = await _googleAuthService.ExchangeAuthCodeForTokenAsync(request.AuthCode);
 
             // 2. 토큰을 이용해 사용자 정보 가져오기
-            var user = await _googleAuthService.GetUserInfoAsync(tokenResponse.AccessToken);
+            var user = _googleAuthService.GetUserInfo(tokenResponse.AccessToken);
             Console.WriteLine(user.Name);
             Console.WriteLine(user.Email);
 
