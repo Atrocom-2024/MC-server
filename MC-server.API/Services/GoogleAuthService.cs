@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System.Net.Http.Headers;
 
 namespace MC_server.API.Services
 {
@@ -41,6 +42,22 @@ namespace MC_server.API.Services
             var tokenResponse = JsonConvert.DeserializeObject<GoogleTokenResponse>(content) ?? throw new InvalidOperationException("Failed to parse Google token response.");
             return tokenResponse;
         }
+
+        public async Task<GoogleUserInfo> GetUserInfoAsync(string accessToken)
+        {
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            var response = await _httpClient.GetAsync("https://www.googleapis.com/oauth2/v2/userinfo");
+            if (!response.IsSuccessStatusCode)
+            {
+                string errorMessage = $"Google API Error: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}";
+                throw new HttpRequestException(errorMessage);
+            }
+
+            var content = await response.Content.ReadAsStringAsync();
+            var userInfo = JsonConvert.DeserializeObject<GoogleUserInfo>(content) ?? throw new InvalidOperationException("Failed to parse Google User Info response.");
+            return userInfo;
+        }
     }
 
     public class GoogleTokenResponse
@@ -53,5 +70,25 @@ namespace MC_server.API.Services
 
         [JsonProperty("expires_in")]
         public int ExpiresIn { get; set; }
+    }
+
+    public class GoogleUserInfo
+    {
+        [JsonProperty("id")]
+        public string Id { get; set; } = string.Empty;
+        [JsonProperty("email")]
+        public string Email { get; set; } = string.Empty;
+        [JsonProperty("verified_email")]
+        public bool VerifiedEmail { get; set; }
+        [JsonProperty("name")]
+        public string Name { get; set; } = string.Empty;
+        [JsonProperty("given_name")]
+        public string GivenName { get; set; } = string.Empty;
+        [JsonProperty("family_name")]
+        public string FamilyName { get; set; } = string.Empty;
+        [JsonProperty("link")]
+        public string Link { get; set; } = string.Empty;
+        [JsonProperty("picture")]
+        public string Picture { get; set; } = string.Empty;
     }
 }

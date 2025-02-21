@@ -32,7 +32,9 @@ namespace MC_server.API.Controllers
             Console.WriteLine(tokenResponse.AccessToken);
 
             // 2. 토큰을 이용해 사용자 정보 가져오기
-            var user = await _userApiService.GetUserDetailsForApiAsync(tokenResponse.IdToken);
+            var user = await _googleAuthService.GetUserInfoAsync(tokenResponse.AccessToken);
+            Console.WriteLine(user.Name);
+            Console.WriteLine(user.Email);
 
             return Ok(user);
         }
