@@ -45,6 +45,13 @@ namespace MC_server.API.Services
 
         public async Task<GoogleUserInfo> GetUserInfoAsync(string accessToken)
         {
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                throw new ArgumentException("Access token is missing or empty.");
+            }
+
+            Console.WriteLine($"Access Token: {accessToken}");
+
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
             var response = await _httpClient.GetAsync("https://www.googleapis.com/oauth2/v2/userinfo");
