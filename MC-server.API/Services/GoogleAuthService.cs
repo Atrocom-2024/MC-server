@@ -28,7 +28,8 @@ namespace MC_server.API.Services
                 { "client_id", googleClientId },
                 { "client_secret", googleClientSecret },
                 { "redirect_uri", "" }, // 모바일 앱은 redirect_uri 필요 없음
-                { "grant_type", "authorization_code" }
+                { "grant_type", "authorization_code" },
+                { "scope", "openid email profile" } // 필요한 권한 추가
             };
 
             var response = await _httpClient.PostAsync("https://oauth2.googleapis.com/token", new FormUrlEncodedContent(requestData));
