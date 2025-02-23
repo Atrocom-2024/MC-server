@@ -40,17 +40,24 @@ namespace MC_server.API.Services
             });
         }
 
-        public async Task<TokenResponse> ExchangeAuthCodeForTokenAsync(string userId, string authCode)
+        public async Task<GoogleTokenResponse> ExchangeAuthCodeForTokenAsync(string userId, string authCode)
         {
             if (string.IsNullOrWhiteSpace(authCode))
                 throw new ArgumentException("Auth code cannot be null or empty.", nameof(authCode));
 
-            return await _flow.ExchangeCodeForTokenAsync(
+            var token = await _flow.ExchangeCodeForTokenAsync(
                 userId: userId,
                 code: authCode,
                 redirectUri: null,
                 taskCancellationToken: CancellationToken.None
             );
+
+            return new GoogleTokenResponse
+            {
+                AccessToken = token.AccessToken,
+                IdToken = token.IdToken,
+                ExpiresIn = token.ExpiresInSeconds ?? 0
+            };
             //var googleClientId = Environment.GetEnvironmentVariable("GOOGLE_AUTH_CLIENT_ID") ?? throw new InvalidOperationException("환경변수를 불러오지 못했습니다.");
             //var googleClientSecret = Environment.GetEnvironmentVariable("GOOGLE_AUTH_CLIENT_SECRET") ?? throw new InvalidOperationException("환경변수를 불러오지 못했습니다.");
 
@@ -123,7 +130,7 @@ namespace MC_server.API.Services
         public string IdToken { get; set; } = string.Empty;
 
         [JsonProperty("expires_in")]
-        public int ExpiresIn { get; set; }
+        public long ExpiresIn { get; set; }
     }
 
     public class GoogleUserInfo
