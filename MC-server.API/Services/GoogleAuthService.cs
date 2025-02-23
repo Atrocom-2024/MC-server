@@ -72,27 +72,27 @@ namespace MC_server.API.Services
             //return tokenResponse;
         }
 
-        public GoogleJsonWebSignature.Payload GetUserInfo(string idToken)
+        public async Task<GoogleUserInfo> GetUserInfo(string accessToken)
         {
-            if (string.IsNullOrEmpty(idToken))
+            if (string.IsNullOrEmpty(accessToken))
             {
                 throw new ArgumentException("Access token is missing or empty.");
             }
 
-            var userInfo = GoogleJsonWebSignature.ValidateAsync(idToken).Result;
+            Console.WriteLine($"Access Token: {accessToken}");
+
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            var response = await _httpClient.GetAsync($"https://www.googleapis.com/oauth2/v1/userinfo?access_token=${accessToken}");
+            if (!response.IsSuccessStatusCode)
+            {
+                string errorMessage = $"Google API Error: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}";
+                throw new HttpRequestException(errorMessage);
+            }
+
+            var content = await response.Content.ReadAsStringAsync();
+            var userInfo = JsonConvert.DeserializeObject<GoogleUserInfo>(content) ?? throw new InvalidOperationException("Failed to parse Google User Info response.");
             return userInfo;
-            //_httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
-            //var response = await _httpClient.GetAsync($"https://www.googleapis.com/oauth2/v1/userinfo?access_token=${accessToken}");
-            //if (!response.IsSuccessStatusCode)
-            //{
-            //    string errorMessage = $"Google API Error: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}";
-            //    throw new HttpRequestException(errorMessage);
-            //}
-
-            //var content = await response.Content.ReadAsStringAsync();
-            //var userInfo = JsonConvert.DeserializeObject<GoogleUserInfo>(content) ?? throw new InvalidOperationException("Failed to parse Google User Info response.");
-            //return userInfo;
         }
     }
 
