@@ -1,12 +1,9 @@
-﻿using Google.Apis.Auth;
-using Google.Apis.Auth.OAuth2;
+﻿using Google.Apis.Auth.OAuth2;
 using Google.Apis.Auth.OAuth2.Flows;
-using Google.Apis.Auth.OAuth2.Responses;
 using Google.Apis.Oauth2.v2;
 using Google.Apis.Oauth2.v2.Data;
 using Google.Apis.Services;
 using Newtonsoft.Json;
-using System.Net.Http.Headers;
 
 namespace MC_server.API.Services
 {
@@ -62,32 +59,9 @@ namespace MC_server.API.Services
                 IdToken = token.IdToken,
                 ExpiresIn = token.ExpiresInSeconds ?? 0
             };
-            //var googleClientId = Environment.GetEnvironmentVariable("GOOGLE_AUTH_CLIENT_ID") ?? throw new InvalidOperationException("환경변수를 불러오지 못했습니다.");
-            //var googleClientSecret = Environment.GetEnvironmentVariable("GOOGLE_AUTH_CLIENT_SECRET") ?? throw new InvalidOperationException("환경변수를 불러오지 못했습니다.");
-
-            //var requestData = new Dictionary<string, string>
-            //{
-            //    { "code", authCode },
-            //    { "client_id", googleClientId },
-            //    { "client_secret", googleClientSecret },
-            //    { "redirect_uri", "" }, // 모바일 앱은 redirect_uri 필요 없음
-            //    { "grant_type", "authorization_code" },
-            //    { "scope", "openid email profile" } // 필요한 권한 추가
-            //};
-
-            //var response = await _httpClient.PostAsync("https://oauth2.googleapis.com/token", new FormUrlEncodedContent(requestData));
-            //var content = await response.Content.ReadAsStringAsync();
-
-            //if (!response.IsSuccessStatusCode)
-            //{
-            //    throw new InvalidOperationException($"Failed to exchange auth code for token. Status Code: {response.StatusCode}, Response: {content}");
-            //}
-
-            //var tokenResponse = JsonConvert.DeserializeObject<GoogleTokenResponse>(content) ?? throw new InvalidOperationException("Failed to parse Google token response.");
-            //return tokenResponse;
         }
 
-        public async Task<Userinfo> GetUserInfo(string accessToken)
+        public async Task<Tokeninfo> ValidationAccessToken(string accessToken)
         {
             if (string.IsNullOrEmpty(accessToken))
             {
@@ -102,22 +76,8 @@ namespace MC_server.API.Services
                 ApplicationName = "MerryCasino"
             });
 
-            var userInfo = await oauthService.Userinfo.Get().ExecuteAsync();
-            return userInfo;
-
-
-            //_httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
-            //var response = await _httpClient.GetAsync($"https://www.googleapis.com/oauth2/v1/userinfo?access_token=${accessToken}");
-            //if (!response.IsSuccessStatusCode)
-            //{
-            //    string errorMessage = $"Google API Error: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}";
-            //    throw new HttpRequestException(errorMessage);
-            //}
-
-            //var content = await response.Content.ReadAsStringAsync();
-            //var userInfo = JsonConvert.DeserializeObject<GoogleUserInfo>(content) ?? throw new InvalidOperationException("Failed to parse Google User Info response.");
-            //return userInfo;
+            var tokenInfo = await oauthService.Tokeninfo().ExecuteAsync();
+            return tokenInfo;
         }
     }
 
