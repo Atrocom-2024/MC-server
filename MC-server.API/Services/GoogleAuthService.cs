@@ -2,6 +2,9 @@
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Auth.OAuth2.Flows;
 using Google.Apis.Auth.OAuth2.Responses;
+using Google.Apis.Oauth2.v2;
+using Google.Apis.Oauth2.v2.Data;
+using Google.Apis.Services;
 using Newtonsoft.Json;
 using System.Net.Http.Headers;
 
@@ -84,29 +87,25 @@ namespace MC_server.API.Services
             //return tokenResponse;
         }
 
-        public async Task<GoogleUserInfo> GetUserInfo(string idToken)
+        public async Task<Userinfo> GetUserInfo(string accessToken)
         {
-            if (string.IsNullOrEmpty(idToken))
+            if (string.IsNullOrEmpty(accessToken))
             {
                 throw new ArgumentException("Access token is missing or empty.");
             }
 
-            Console.WriteLine($"Id Token: {idToken}");
+            Console.WriteLine($"Access Token: {accessToken}");
 
-            // Google의 OAuth2 라이브러리를 사용하여 Payload 검증
-            var payload = await GoogleJsonWebSignature.ValidateAsync(idToken);
-
-            // Payload 정보를 GoogleUserInfo 객체로 매핑
-            return new GoogleUserInfo
+            var oauthService = new Oauth2Service(new BaseClientService.Initializer
             {
-                Id = payload.Subject,
-                Email = payload.Email,
-                VerifiedEmail = payload.EmailVerified,
-                Name = payload.Name,
-                GivenName = payload.GivenName,
-                FamilyName = payload.FamilyName,
-                Picture = payload.Picture,
-            };
+                HttpClientInitializer = GoogleCredential.FromAccessToken(accessToken),
+                ApplicationName = "MerryCasino"
+            });
+
+            var userInfo = await oauthService.Userinfo.Get().ExecuteAsync();
+            return userInfo;
+
+
             //_httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
             //var response = await _httpClient.GetAsync($"https://www.googleapis.com/oauth2/v1/userinfo?access_token=${accessToken}");
