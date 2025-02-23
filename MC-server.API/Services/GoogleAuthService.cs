@@ -32,17 +32,21 @@ namespace MC_server.API.Services
             _flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
             {
                 ClientSecrets = clientSecrets,
-                Scopes = new[] { "openid", "email", "profile" }
+                Scopes = new[]
+                {
+                    "https://www.googleapis.com/auth/userinfo.email",
+                    "https://www.googleapis.com/auth/userinfo.profile"
+                }
             });
         }
 
-        public async Task<TokenResponse> ExchangeAuthCodeForTokenAsync(string authCode)
+        public async Task<TokenResponse> ExchangeAuthCodeForTokenAsync(string userId, string authCode)
         {
             if (string.IsNullOrWhiteSpace(authCode))
                 throw new ArgumentException("Auth code cannot be null or empty.", nameof(authCode));
 
             return await _flow.ExchangeCodeForTokenAsync(
-                userId: null,
+                userId: userId,
                 code: authCode,
                 redirectUri: null,
                 taskCancellationToken: CancellationToken.None
@@ -72,27 +76,41 @@ namespace MC_server.API.Services
             //return tokenResponse;
         }
 
-        public async Task<GoogleUserInfo> GetUserInfo(string accessToken)
+        public GoogleUserInfo GetUserInfo(string idToken)
         {
-            if (string.IsNullOrEmpty(accessToken))
+            if (string.IsNullOrEmpty(idToken))
             {
                 throw new ArgumentException("Access token is missing or empty.");
             }
 
-            Console.WriteLine($"Access Token: {accessToken}");
+            Console.WriteLine($"Id Token: {idToken}");
 
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            // Google의 OAuth2 라이브러리를 사용하여 Payload 검증
+            var payload = GoogleJsonWebSignature.ValidateAsync(idToken).Result;
 
-            var response = await _httpClient.GetAsync($"https://www.googleapis.com/oauth2/v1/userinfo?access_token=${accessToken}");
-            if (!response.IsSuccessStatusCode)
+            // Payload 정보를 GoogleUserInfo 객체로 매핑
+            return new GoogleUserInfo
             {
-                string errorMessage = $"Google API Error: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}";
-                throw new HttpRequestException(errorMessage);
-            }
+                Id = payload.Subject,
+                Email = payload.Email,
+                VerifiedEmail = payload.EmailVerified,
+                Name = payload.Name,
+                GivenName = payload.GivenName,
+                FamilyName = payload.FamilyName,
+                Picture = payload.Picture,
+            };
+            //_httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-            var content = await response.Content.ReadAsStringAsync();
-            var userInfo = JsonConvert.DeserializeObject<GoogleUserInfo>(content) ?? throw new InvalidOperationException("Failed to parse Google User Info response.");
-            return userInfo;
+            //var response = await _httpClient.GetAsync($"https://www.googleapis.com/oauth2/v1/userinfo?access_token=${accessToken}");
+            //if (!response.IsSuccessStatusCode)
+            //{
+            //    string errorMessage = $"Google API Error: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}";
+            //    throw new HttpRequestException(errorMessage);
+            //}
+
+            //var content = await response.Content.ReadAsStringAsync();
+            //var userInfo = JsonConvert.DeserializeObject<GoogleUserInfo>(content) ?? throw new InvalidOperationException("Failed to parse Google User Info response.");
+            //return userInfo;
         }
     }
 

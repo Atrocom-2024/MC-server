@@ -27,10 +27,10 @@ namespace MC_server.API.Controllers
             }
 
             // 1. Google Auth Code 검증 (토큰 교환)
-            var tokenResponse = await _googleAuthService.ExchangeAuthCodeForTokenAsync(request.AuthCode);
+            var tokenResponse = await _googleAuthService.ExchangeAuthCodeForTokenAsync(request.UserId, request.AuthCode);
 
             // 2. 토큰을 이용해 사용자 정보 가져오기
-            var user = await _googleAuthService.GetUserInfo(tokenResponse.AccessToken);
+            var user = _googleAuthService.GetUserInfo(tokenResponse.AccessToken);
             Console.WriteLine(user.Name);
             Console.WriteLine(user.Email);
 
