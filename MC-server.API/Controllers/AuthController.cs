@@ -31,11 +31,11 @@ namespace MC_server.API.Controllers
             Console.WriteLine(tokenResponse.AccessToken);
 
             // 2. Access Token 검증
-            var user = await _googleAuthService.ValidationAccessToken(tokenResponse.AccessToken);
-            Console.WriteLine(user.UserId);
-            Console.WriteLine(user.Email);
+            var tokenInfo = await _googleAuthService.ValidationAccessToken(tokenResponse.AccessToken);
+            Console.WriteLine($"User id: {tokenInfo.UserId}");
+            Console.WriteLine($"User email: {tokenInfo.Email}");
 
-            return Ok(user);
+            return Ok(tokenInfo);
         }
     }
 }

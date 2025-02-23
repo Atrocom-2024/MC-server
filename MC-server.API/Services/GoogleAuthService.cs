@@ -68,8 +68,6 @@ namespace MC_server.API.Services
                 throw new ArgumentException("Access token is missing or empty.");
             }
 
-            Console.WriteLine($"Access Token: {accessToken}");
-
             var oauthService = new Oauth2Service(new BaseClientService.Initializer
             {
                 HttpClientInitializer = GoogleCredential.FromAccessToken(accessToken),
