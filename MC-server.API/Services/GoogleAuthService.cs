@@ -84,7 +84,7 @@ namespace MC_server.API.Services
             //return tokenResponse;
         }
 
-        public GoogleUserInfo GetUserInfo(string idToken)
+        public async Task<GoogleUserInfo> GetUserInfo(string idToken)
         {
             if (string.IsNullOrEmpty(idToken))
             {
@@ -94,7 +94,7 @@ namespace MC_server.API.Services
             Console.WriteLine($"Id Token: {idToken}");
 
             // Google의 OAuth2 라이브러리를 사용하여 Payload 검증
-            var payload = GoogleJsonWebSignature.ValidateAsync(idToken).Result;
+            var payload = await GoogleJsonWebSignature.ValidateAsync(idToken);
 
             // Payload 정보를 GoogleUserInfo 객체로 매핑
             return new GoogleUserInfo
