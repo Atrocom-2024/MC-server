@@ -34,6 +34,7 @@ namespace MC_server.API.Services
                 ClientSecrets = clientSecrets,
                 Scopes = new[]
                 {
+                    "openid",
                     "https://www.googleapis.com/auth/userinfo.email",
                     "https://www.googleapis.com/auth/userinfo.profile"
                 }
