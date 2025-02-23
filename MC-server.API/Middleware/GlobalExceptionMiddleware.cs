@@ -35,6 +35,10 @@ namespace MC_server.API.Middleware
             {
                 await HandleExceptionAsync(context, ex, HttpStatusCode.Conflict);
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                await HandleExceptionAsync(context, ex, HttpStatusCode.Unauthorized);
+            }
             catch (InvalidOperationException ex)
             {
                 Console.WriteLine($"[web] Error in GlobalExceptionMiddleware: {ex.Message}");

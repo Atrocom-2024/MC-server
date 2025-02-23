@@ -32,24 +32,24 @@ namespace MC_server.API.Services
             _flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
             {
                 ClientSecrets = clientSecrets,
-                Scopes = new[]
-                {
+                Scopes =
+                [
                     "openid",
                     "https://www.googleapis.com/auth/userinfo.email",
                     "https://www.googleapis.com/auth/userinfo.profile"
-                }
+                ]
             });
         }
 
-        public async Task<GoogleTokenResponse> ExchangeAuthCodeForTokenAsync(string userId, string authCode)
+        public async Task<GoogleTokenResponse> ExchangeAuthCodeForTokenAsync(string authCode)
         {
             if (string.IsNullOrWhiteSpace(authCode))
                 throw new ArgumentException("Auth code cannot be null or empty.", nameof(authCode));
 
             var token = await _flow.ExchangeCodeForTokenAsync(
-                userId: userId,
+                userId: "anonymous",
                 code: authCode,
-                redirectUri: null,
+                redirectUri: "",
                 taskCancellationToken: CancellationToken.None
             );
 
@@ -61,7 +61,7 @@ namespace MC_server.API.Services
             };
         }
 
-        public async Task<Tokeninfo> ValidationAccessToken(string accessToken)
+        public async Task<bool> ValidationAccessToken(string accessToken)
         {
             if (string.IsNullOrEmpty(accessToken))
             {
@@ -74,8 +74,10 @@ namespace MC_server.API.Services
                 ApplicationName = "MerryCasino"
             });
 
-            var tokenInfo = await oauthService.Tokeninfo().ExecuteAsync();
-            return tokenInfo;
+            var _ = await oauthService.Tokeninfo().ExecuteAsync()
+                ?? throw new UnauthorizedAccessException("Access token is invalid or expired.");
+
+            return true;
         }
     }
 
