@@ -19,38 +19,36 @@ namespace MC_server.API.Services
             _userService = userService;
         }
 
-        public async Task<User> GetUserDetailsForApiAsync(string userId)
+        public async Task<User?> GetUserDetailsForApiAsync(string userId)
         {
             // Core 서비스 호출
-            var user = await _userService.GetUserByIdAsync(userId) ?? throw new KeyNotFoundException($"User with ID '{userId}' not found.");
+            var user = await _userService.GetUserByIdAsync(userId);
 
             // API에 특화된 데이터 반환
             //return new { user.UserId, user.Nickname, user.Level, user.Coins };
             return user;
         }
 
-        public async Task<User> CreateUserAsync(UserCreateRequest request)
+        public async Task<User> CreateUserAsync(string userId, string provider)
         {
-            if (string.IsNullOrEmpty(request.UserId) || string.IsNullOrEmpty(request.Provider))
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(provider))
             {
                 throw new ValidationException("UserId and Provider are required.");
             }
 
             // 유저 중복 검증
-            if (await _userService.GetUserByIdAsync(request.UserId) != null)
+            if (await _userService.GetUserByIdAsync(userId) != null)
             {
-                throw new InvalidOperationException($"User with ID '{request.UserId}' already exists.");
+                throw new InvalidOperationException($"User with ID '{userId}' already exists.");
             }
 
             // 유저 생성
             var user = new User
             {
-                UserId = request.UserId,
-                Provider = request.Provider,
-                Email = request.Email, // google일 경우 추가, 다른 provider면 null
-                Name = request.Name, // google일 경우 추가, 다른 provider면 null
+                UserId = userId,
+                Provider = provider,
                 Nickname = UserUtility.GenerateRandomNickname(), // 랜덤 닉네임 생성
-                Coins = 1000000, // 기본 코인
+                Coins = 500000, // 기본 코인
                 Level = 1, // 기본 레벨
                 Experience = 0, // 초기 경험치
             };
@@ -61,7 +59,7 @@ namespace MC_server.API.Services
         public async Task<object?> UpdateUserAsync(string userId, UserUpdateRequest request)
         {
             // 유저 정보 가져오기
-            User user = await GetUserDetailsForApiAsync(userId);
+            User user = await GetUserDetailsForApiAsync(userId) ?? throw new KeyNotFoundException($"User with ID '{userId}' not found.");
 
             var updatedFields = new Dictionary<string, object>();
 

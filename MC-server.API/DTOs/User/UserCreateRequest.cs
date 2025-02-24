@@ -9,11 +9,5 @@ namespace MC_server.API.DTOs.User
 
         [Required]
         public string Provider { get; set; } = string.Empty;
-
-        public string? DeviceId { get; set; } = string.Empty;
-
-        public string? Email { get; set; }
-
-        public string? Name { get; set; }
     }
 }

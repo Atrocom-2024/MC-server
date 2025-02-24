@@ -38,8 +38,9 @@ namespace MC_server.API.Controllers
                 throw new UnauthorizedAccessException("Access token is invalid or expired.");
             }
 
-            // 3. 사용자 정보 가져오기
-            var userInfo = await _userApiService.GetUserDetailsForApiAsync(request.UserId);
+            // 3. 사용자 정보 가져오기 -> 유저 정보가 없다면 자동 회원가입
+            var userInfo = await _userApiService.GetUserDetailsForApiAsync(request.UserId)
+                ?? await _userApiService.CreateUserAsync(request.UserId, "google");
             return Ok(userInfo);
         }
     }

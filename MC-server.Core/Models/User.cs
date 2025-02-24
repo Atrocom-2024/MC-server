@@ -13,12 +13,6 @@ namespace MC_server.Core.Models
         
         [Column("nickname"), Required] // Not Null 제약 조건
         public string Nickname { get; set; } = string.Empty;
-        
-        [Column("email")]
-        public string? Email { get; set; } // Nullable
-
-        [Column("name")]
-        public string? Name { get; set; } // Nullable
 
         [Column("coins")]
         public long Coins { get; set; }

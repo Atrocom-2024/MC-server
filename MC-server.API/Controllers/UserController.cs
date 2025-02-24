@@ -29,7 +29,7 @@ namespace MC_server.API.Controllers
             }
 
             // UserApiService 호출
-            User createdUser = (User)await _userApiService.CreateUserAsync(request);
+            User createdUser = await _userApiService.CreateUserAsync(request.UserId, request.Provider);
 
             return CreatedAtAction(nameof(GetUserById), new { userId = createdUser.UserId }, createdUser);
         }
@@ -41,7 +41,8 @@ namespace MC_server.API.Controllers
             Console.WriteLine("[web] 유저 정보 요청 발생");
 
             // UserApiService를 호출
-            var userDetails = await _userApiService.GetUserDetailsForApiAsync(userId);
+            var userDetails = await _userApiService.GetUserDetailsForApiAsync(userId)
+                ?? throw new KeyNotFoundException($"User with ID '{userId}' not found.");
 
             return Ok(userDetails);
         }
