@@ -49,7 +49,7 @@ namespace MC_server.API.Services
             var token = await _flow.ExchangeCodeForTokenAsync(
                 userId: "anonymous",
                 code: authCode,
-                redirectUri: "",
+                redirectUri: "", // 모바일은 빈 문자열로 설정
                 taskCancellationToken: CancellationToken.None
             );
 

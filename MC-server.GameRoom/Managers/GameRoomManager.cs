@@ -160,11 +160,14 @@ namespace MC_server.GameRoom.Managers
         private async Task EndGameRewardPayment(int roomId)
         {
             var clientsInRoom = _clientManager.GetClientsInRoom(roomId);
-            var rewardCoins = 1000000;
 
             foreach (var client in clientsInRoom)
             {
                 var gameUser = _clientManager.GetGameUser(client);
+                var rewardCoins = gameUser.UserTotalBetAmount * 0.1M;
+                Console.WriteLine($"[socket] Reward coins: {rewardCoins}");
+                Console.WriteLine($"[socket] User total bet amount: {gameUser.UserTotalBetAmount}");
+
                 var updatedUser = await _userTcpService.UpdateUserAsync(gameUser.UserId, "coins", rewardCoins);
 
                 if (updatedUser != null)
