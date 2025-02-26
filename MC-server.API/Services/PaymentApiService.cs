@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Google.Apis.Auth.OAuth2;
-
+using MC_server.Core.Models;
 using MC_server.Core.Services;
 
 namespace MC_server.API.Services
@@ -10,11 +10,13 @@ namespace MC_server.API.Services
     {
         private readonly HttpClient _httpClient;
         private readonly UserService _userService;
+        private readonly PaymentService _paymentService;
         
-        public PaymentApiService(HttpClient httpClient, UserService userService)
+        public PaymentApiService(HttpClient httpClient, UserService userService, PaymentService paymentService)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _userService = userService ?? throw new ArgumentNullException(nameof(userService));
+            _paymentService = paymentService ?? throw new ArgumentNullException(nameof(paymentService));
         }
 
         // JSON 영수증 파싱 메서드
@@ -101,6 +103,21 @@ namespace MC_server.API.Services
                 TransactionId = receipt.OrderId,
                 PurchasedCoins = CalculatePurchasedCoins(receipt.ProductId)
             };
+        }
+
+        public async Task CreatePaymentRecord(string userId, GooglePlayReceiptJson receiptPayload, string rawReceipt)
+        {
+            var payment = new Payment
+            {
+                UserId = userId,
+                OrderId = receiptPayload.OrderId,
+                ProductId = receiptPayload.ProductId,
+                PurchaseToken = receiptPayload.PurchaseToken,
+                PurchaseState = receiptPayload.PurchaseState,
+                PurchaseTime = DateTimeOffset.FromUnixTimeMilliseconds(receiptPayload.PurchaseTime).UtcDateTime,
+                ReceiptData = rawReceipt
+            };
+            await _paymentService.CreatePaymentAsync(payment);
         }
 
         public async Task<ProcessReceiptResult> ProcessReceiptAsync(string userId, int addCoinsAmount)
