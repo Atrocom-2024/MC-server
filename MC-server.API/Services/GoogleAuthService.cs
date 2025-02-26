@@ -1,7 +1,6 @@
 ﻿using Google.Apis.Auth.OAuth2;
 using Google.Apis.Auth.OAuth2.Flows;
 using Google.Apis.Oauth2.v2;
-using Google.Apis.Oauth2.v2.Data;
 using Google.Apis.Services;
 using Newtonsoft.Json;
 
@@ -9,15 +8,10 @@ namespace MC_server.API.Services
 {
     public class GoogleAuthService
     {
-        private readonly HttpClient _httpClient;
-        private readonly IConfiguration _configuration;
         private readonly GoogleAuthorizationCodeFlow _flow;
 
-        public GoogleAuthService(HttpClient httpClient, IConfiguration configuration)
+        public GoogleAuthService()
         {
-            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-
             var clientId = Environment.GetEnvironmentVariable("GOOGLE_AUTH_CLIENT_ID")
                 ?? throw new InvalidOperationException("환경변수를 불러오지 못했습니다.");
             var clientSecret = Environment.GetEnvironmentVariable("GOOGLE_AUTH_CLIENT_SECRET")
