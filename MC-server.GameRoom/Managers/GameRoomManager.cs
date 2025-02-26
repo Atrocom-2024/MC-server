@@ -165,9 +165,6 @@ namespace MC_server.GameRoom.Managers
             {
                 var gameUser = _clientManager.GetGameUser(client);
                 var rewardCoins = (int)(gameUser.UserTotalBetAmount * 0.1M);
-                Console.WriteLine($"[socket] Reward coins: {rewardCoins}");
-                Console.WriteLine($"[socket] User total bet amount: {gameUser.UserTotalBetAmount}");
-
                 var updatedUser = await _userTcpService.UpdateUserAsync(gameUser.UserId, "coins", rewardCoins);
 
                 if (updatedUser != null)

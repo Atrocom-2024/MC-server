@@ -10,7 +10,8 @@ namespace MC_server.Core.Models
     public class Payment
     {
         [Key]
-        [Column("payment_id")]
+        [Column("payment_id")
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)] // Auto Increment 설정
         public int PaymentId { get; set; }
 
         [ForeignKey("User")]

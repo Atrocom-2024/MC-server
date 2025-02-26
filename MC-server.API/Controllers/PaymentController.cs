@@ -44,6 +44,9 @@ namespace MC_server.API.Controllers
                 });
             }
 
+            // 3. 결제 내역 저장
+            await _paymentApiService.CreatePaymentRecord(request.UserId, deserializedReceipt, request.Receipt);
+
             // 3. 사용자에게 코인 지급 처리
             var processReceiptResult = await _paymentApiService.ProcessReceiptAsync(request.UserId, validationResult.PurchasedCoins);
 
