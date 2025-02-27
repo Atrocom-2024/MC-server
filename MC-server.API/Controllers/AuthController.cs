@@ -28,7 +28,6 @@ namespace MC_server.API.Controllers
 
             // 1. Google Auth Code 검증 (토큰 교환)
             var tokenResponse = await _googleAuthService.ExchangeAuthCodeForTokenAsync(request.AuthCode);
-            Console.WriteLine(tokenResponse.AccessToken);
 
             // 2. Access Token 검증
             var isValidated = await _googleAuthService.ValidationAccessToken(tokenResponse.AccessToken);

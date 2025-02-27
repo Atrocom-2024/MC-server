@@ -68,10 +68,8 @@ namespace MC_server.API.Services
                 ApplicationName = "MerryCasino"
             });
 
-            var tokenInfo = await oauthService.Tokeninfo().ExecuteAsync()
+            var _ = await oauthService.Tokeninfo().ExecuteAsync()
                 ?? throw new UnauthorizedAccessException("Access token is invalid or expired.");
-
-            Console.WriteLine(tokenInfo.Scope);
 
             return true;
         }
