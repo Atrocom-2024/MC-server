@@ -6,6 +6,9 @@ namespace MC_server.GameRoom.Models
     public class GameSessionEndResponse
     {
         [ProtoMember(1)]
-        public long RewardCoins { get; set; }
+        public long RewardedCoinsAmount { get; set; }
+
+        [ProtoMember(2)]
+        public int RewardCoins { get; set; }
     }
 }
