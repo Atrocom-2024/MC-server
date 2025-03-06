@@ -171,7 +171,7 @@ namespace MC_server.GameRoom.Managers
                 {
                     var response = new ClientResponse
                     {
-                        ResponseType = "GameSessionEnd",
+                        ResponseType = "GameSessionEndResponse",
                         GameSessionEndData = new GameSessionEndResponse { RewardCoins = updatedUser.Coins }
                     };
                     byte[] responseData = ProtobufUtils.SerializeProtobuf(response);
