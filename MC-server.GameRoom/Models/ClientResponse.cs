@@ -6,7 +6,7 @@ namespace MC_server.GameRoom.Models
     public class ClientResponse
     {
         [ProtoMember(1)]
-        public string ResponseType { get; set; } = string.Empty; // BetResponse, GameState, GameUserState, AddCoinsResponse
+        public string ResponseType { get; set; } = string.Empty; // BetResponse, GameState, GameUserState, AddCoinsResponse, GameSessionEnd
 
         [ProtoMember(2)]
         public GameUserState? GameUserState { get; set; }
@@ -19,5 +19,8 @@ namespace MC_server.GameRoom.Models
 
         [ProtoMember(5)]
         public AddCoinsResponse? AddCoinsResponseData { get; set; }
+
+        [ProtoMember(6)]
+        public GameSessionEndResponse? GameSessionEndData { get; set; }
     }
 }

@@ -112,7 +112,7 @@ namespace MC_server.GameRoom.Managers
                     _gameSessions[roomId].TotalJackpotAmount = existingGameRecord.TotalJackpotAmount;
                 }
 
-                await EndGameRewardPayment(roomId); // 게임 세션 초기화 시 페이아웃 반환
+                await GameSessionEndBroadcast(roomId); // 게임 세션 초기화 시 페이아웃 반환
 
                 // 게임 유저 초기화 및 브로드캐스트
                 try
@@ -157,7 +157,7 @@ namespace MC_server.GameRoom.Managers
             }
         }
 
-        private async Task EndGameRewardPayment(int roomId)
+        private async Task GameSessionEndBroadcast(int roomId)
         {
             var clientsInRoom = _clientManager.GetClientsInRoom(roomId);
 
@@ -171,8 +171,8 @@ namespace MC_server.GameRoom.Managers
                 {
                     var response = new ClientResponse
                     {
-                        ResponseType = "AddCoinsResponse",
-                        AddCoinsResponseData = new AddCoinsResponse { AddedCoinsAmount = updatedUser.Coins }
+                        ResponseType = "GameSessionEnd",
+                        GameSessionEndData = new GameSessionEndResponse { RewardCoins = updatedUser.Coins }
                     };
                     byte[] responseData = ProtobufUtils.SerializeProtobuf(response);
                     var stream = client.GetStream();
