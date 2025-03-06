@@ -14,6 +14,8 @@
 
         public long UserTotalBetAmount { get; set; }
 
+        public long UserSessionBetAmount { get; set; }
+
         public decimal JackpotProb { get; set; }
     }
 }

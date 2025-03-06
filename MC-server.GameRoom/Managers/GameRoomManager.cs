@@ -164,7 +164,7 @@ namespace MC_server.GameRoom.Managers
             foreach (var client in clientsInRoom)
             {
                 var gameUser = _clientManager.GetGameUser(client);
-                var rewardCoins = (int)(gameUser.UserTotalBetAmount * 0.1M);
+                var rewardCoins = (int)(gameUser.UserSessionBetAmount * 0.1M);
                 var updatedUser = await _userTcpService.UpdateUserAsync(gameUser.UserId, "coins", rewardCoins);
 
                 if (updatedUser != null)

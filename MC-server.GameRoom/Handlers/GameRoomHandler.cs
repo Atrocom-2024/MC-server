@@ -143,6 +143,7 @@ namespace MC_server.GameRoom.Handlers
                         var newPayout = GameUserStateUtils.CalculatePayout(gameUser, gameSession);
                         _clientManager.UpdateGameUser(client, "currentPayout", newPayout); // 해당 유저의 페이아웃 재계산
                         _clientManager.UpdateGameUser(client, "userTotalBetAmount", betRequest.BetAmount);// 배팅한 게임 유저의 총 배팅 금액을 수정
+                        _clientManager.UpdateGameUser(client, "userSessionBetAmount", betRequest.BetAmount);// 배팅한 게임 유저의 총 배팅 금액을 수정
                         gameSession.TotalBetAmount += betRequest.BetAmount; // 해당 룸의 총 배팅 금액 변경
                         gameSession.TotalJackpotAmount += (long)Math.Round(betRequest.BetAmount * 0.1); // 배팅 금액의 10%만큼 잭팟 금액에 누적
                     }

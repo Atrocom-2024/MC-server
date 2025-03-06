@@ -32,6 +32,7 @@ namespace MC_server.GameRoom.Managers
                 InitialCoins = user.Coins,
                 UserTotalProfit = 0,
                 UserTotalBetAmount = 0,
+                UserSessionBetAmount = 0,
                 JackpotProb = 0.1M
             };
 
@@ -88,6 +89,18 @@ namespace MC_server.GameRoom.Managers
                         else
                         {
                             throw new ArgumentException("Invalid value type for UserTotalBetAmount");
+                        }
+                        break;
+                    case "userSessionBetAmount":
+                        if (value is int sessionBetAmount)
+                        {
+                            gameUser.UserSessionBetAmount += sessionBetAmount;
+                            updatedData["userSessionBetAmount"] = gameUser.UserSessionBetAmount;
+                            Console.WriteLine($"[socket] Updated UserSessionBetAmount for user to {gameUser.UserSessionBetAmount}");
+                        }
+                        else
+                        {
+                            throw new ArgumentException("Invalid value type for UserSessionBetAmount");
                         }
                         break;
                     case "jackpotProb":
