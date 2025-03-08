@@ -22,6 +22,15 @@ namespace MC_server.GameRoom.Managers
 
         public async Task<GameUser> AddClient(TcpClient client, string userId, int roomId)
         {
+            // 기존 userId가 있는 TcpClient 찾기
+            var existingEntry = _clientStates.FirstOrDefault(x => x.Value.UserId == userId);
+            if (!existingEntry.Equals(default(KeyValuePair<TcpClient, GameUser>)))
+            {
+                Console.WriteLine($"기존 클라이언트 제거: {existingEntry.Key.Client.RemoteEndPoint}");
+                existingEntry.Key.Close();
+                _clientStates.TryRemove(existingEntry.Key, out _);
+            }
+
             var user = await _userTcpService.GetUserByIdAsync(userId) ?? throw new Exception("User can not found");
 
             var gameUser = new GameUser
