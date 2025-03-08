@@ -44,6 +44,7 @@ namespace MC_server.GameRoom.Managers
 
         public void RemoveClient(TcpClient client)
         {
+            Console.WriteLine($"[socket] Client disconnected: {client.Client.RemoteEndPoint}");
             _clientStates.TryRemove(client, out _);
         }
 
