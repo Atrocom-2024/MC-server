@@ -46,6 +46,7 @@ namespace MC_server.GameRoom.Managers
         {
             Console.WriteLine($"[socket] Client disconnected: {client.Client.RemoteEndPoint}");
             _clientStates.TryRemove(client, out _);
+            Console.WriteLine($"Socket object size: {_clientStates.Count}");
         }
 
         public Dictionary<string, object> UpdateGameUser(TcpClient client, string property, object value)
