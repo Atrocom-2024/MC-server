@@ -85,6 +85,7 @@ namespace MC_server.GameRoom.Handlers
             try
             {
                 Console.WriteLine($"Join User ID: {joinRequest.UserId}");
+                Console.WriteLine($"Join Client ID: {client.Client.RemoteEndPoint}");
 
                 // 1. 유저가 해당 룸에 Join 시 해당 룸에 유저 정보 등록
                 await _clientManager.AddClient(client, joinRequest.UserId, joinRequest.RoomId);
@@ -131,6 +132,7 @@ namespace MC_server.GameRoom.Handlers
                 int roomId = _clientManager.GetUserRoomId(client);
                 var gameUser = _clientManager.GetGameUser(client);
                 var gameSession = _gameRoomManager.GetGameSession(roomId);
+                var newPayout = GameUserStateUtils.CalculatePayout(gameUser, gameSession);
                 
                 // 유저의 코인 수 변경
                 var updatedUser = await _userTcpService.UpdateUserAsync(gameUser.UserId, "coins", -betRequest.BetAmount);
@@ -140,7 +142,6 @@ namespace MC_server.GameRoom.Handlers
                     lock (_sessionLock) // GameSession 업데이트 보호
                     {
                         // 배팅 처리
-                        var newPayout = GameUserStateUtils.CalculatePayout(gameUser, gameSession);
                         _clientManager.UpdateGameUser(client, "currentPayout", newPayout); // 해당 유저의 페이아웃 재계산
                         _clientManager.UpdateGameUser(client, "userTotalBetAmount", betRequest.BetAmount);// 배팅한 게임 유저의 총 배팅 금액을 수정
                         _clientManager.UpdateGameUser(client, "userSessionBetAmount", betRequest.BetAmount);// 배팅한 게임 유저의 총 배팅 금액을 수정
