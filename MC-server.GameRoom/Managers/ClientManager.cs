@@ -145,6 +145,7 @@ namespace MC_server.GameRoom.Managers
                 gameUser.CurrentPayout = 0M;
                 gameUser.UserTotalProfit = 0;
                 gameUser.UserTotalBetAmount = 0;
+                gameUser.UserSessionBetAmount = 0;
                 gameUser.JackpotProb = 0.1M;
 
                 var newPayout = GameUserStateUtils.CalculatePayout(gameUser, gameSession);

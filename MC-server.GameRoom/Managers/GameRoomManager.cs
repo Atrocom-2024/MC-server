@@ -63,17 +63,17 @@ namespace MC_server.GameRoom.Managers
                 return;
             }
 
-            //_sessionTimers.AddOrUpdate(roomId, new Timer(async _ =>
-            //{
-            //    // 잭팟이 터지거나 시간이 만료되면 초기화
-            //    await ResetGameRoom(roomId);
-            //}, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1)), (key, oldValue) => oldValue);
-            var timer = new Timer(async _ =>
+            _sessionTimers.AddOrUpdate(roomId, new Timer(async _ =>
             {
+                // 잭팟이 터지거나 시간이 만료되면 초기화
                 await ResetGameRoom(roomId);
-            }, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+            }, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1)), (key, oldValue) => oldValue);
+            //var timer = new Timer(async _ =>
+            //{
+            //    await ResetGameRoom(roomId);
+            //}, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
 
-            _sessionTimers[roomId] = timer;
+            //_sessionTimers[roomId] = timer;
             Console.WriteLine($"[socket] Timer started for Room {roomId}");
         }
 
