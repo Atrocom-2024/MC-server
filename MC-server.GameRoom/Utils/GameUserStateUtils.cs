@@ -9,7 +9,7 @@ namespace MC_server.GameRoom.Utils
             var adjustedProb = ((gameSession.TargetPayout - gameUser.CurrentPayout) / 2);
             var part_A = (adjustedProb * ((decimal)gameUser.UserTotalBetAmount / gameSession.MaxBetAmount) + adjustedProb * ((decimal)gameSession.TotalUser / gameSession.MaxUser));
 
-            return part_A;
+            return part_A / 2;
         }
     }
 }
