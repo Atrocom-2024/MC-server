@@ -58,6 +58,12 @@ namespace MC_server.GameRoom.Handlers
                                     await HandleAddCoins(client, request.AddCoinsData);
                                 }
                                 break;
+                            case "JackpotWinRequest":
+                                if (request.JackpotWinData != null)
+                                {
+                                    await HandleJackpotWin(client, request.JackpotWinData);
+                                }
+                                break;
                             default:
                                 Console.WriteLine("[socket] Unknown request type received.");
                                 break;
@@ -213,6 +219,53 @@ namespace MC_server.GameRoom.Handlers
             catch (Exception ex)
             {
                 Console.WriteLine($"[socket] Error handling adding coins: {ex.Message}");
+            }
+        }
+
+        private async Task HandleJackpotWin(TcpClient client, JackpotWinRequest jackpotWinRequest)
+        {
+            try
+            {
+                Console.WriteLine("[socket] 잭팟 발생!!!!!!!!!!!!");
+
+                // 잭팟이 터진 유저의 코인 수 변경
+                var userInfo = _clientManager.GetGameUser(client);
+                var updatedUser = await _userTcpService.UpdateUserAsync(userInfo.UserId, "coins", jackpotWinRequest.JackpotWinCoins);
+                var roomId = _clientManager.GetUserRoomId(client);
+                var stream = client.GetStream();
+
+                // 존재하지 않는 유저라면 에러 메시지 전송
+                if (updatedUser == null)
+                {
+                    var errorResponse = new ClientResponse
+                    {
+                        ResponseType = "JackpotWinResponse",
+                        ErrorMessage = "User not found"
+                    };
+                    byte[] errorResponseData = ProtobufUtils.SerializeProtobuf(errorResponse);
+                    stream.Write(errorResponseData, 0, errorResponseData.Length);
+                    stream.Flush();
+                    return;
+                }
+
+                // 성공 응답 처리
+                var response = new ClientResponse
+                {
+                    ResponseType = "JackpotWinResponse",
+                    JackpotWinResponseData = new JackpotWinResponse { AddedCoinsAmount = updatedUser.Coins }
+                };
+                byte[] responseData = ProtobufUtils.SerializeProtobuf(response);
+                stream.Write(responseData, 0, responseData.Length);
+                stream.Flush();
+
+                _gameRoomManager.ChangedJackpotState(roomId, true);
+                await _gameRoomManager.ResetGameRoom(roomId); // 게임 룸 초기화
+
+                return;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[socket] Error handling jackpot win: {ex.Message}");
             }
         }
 

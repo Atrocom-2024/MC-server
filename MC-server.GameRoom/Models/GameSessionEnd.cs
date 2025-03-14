@@ -3,7 +3,7 @@
 namespace MC_server.GameRoom.Models
 {
     [ProtoContract]
-    public class GameSessionEndResponse
+    public class GameSessionEnd
     {
         [ProtoMember(1)]
         public long RewardedCoinsAmount { get; set; }

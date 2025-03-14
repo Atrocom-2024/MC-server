@@ -6,21 +6,27 @@ namespace MC_server.GameRoom.Models
     public class ClientResponse
     {
         [ProtoMember(1)]
-        public string ResponseType { get; set; } = string.Empty; // BetResponse, GameState, GameUserState, AddCoinsResponse, GameSessionEnd
+        public string ResponseType { get; set; } = string.Empty; // BetResponse, GameState, GameUserState, AddCoinsResponse, GameSessionEnd, JackpotWinResponse
 
         [ProtoMember(2)]
-        public GameUserState? GameUserState { get; set; }
+        public string? ErrorMessage { get; set; } = string.Empty;
 
         [ProtoMember(3)]
-        public GameState? GameState { get; set; }
+        public GameUserState? GameUserState { get; set; }
 
         [ProtoMember(4)]
-        public BetResponse? BetResponseData { get; set; }
+        public GameState? GameState { get; set; }
 
         [ProtoMember(5)]
-        public AddCoinsResponse? AddCoinsResponseData { get; set; }
+        public BetResponse? BetResponseData { get; set; }
 
         [ProtoMember(6)]
-        public GameSessionEndResponse? GameSessionEndData { get; set; }
+        public AddCoinsResponse? AddCoinsResponseData { get; set; }
+
+        [ProtoMember(7)]
+        public GameSessionEnd? GameSessionEndData { get; set; }
+
+        [ProtoMember(8)]
+        public JackpotWinResponse? JackpotWinResponseData { get; set; }
     }
 }
