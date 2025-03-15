@@ -56,6 +56,26 @@ namespace MC_server.GameRoom.Communication
             await SendToClient(client, responseData);
         }
 
+        public async Task SendGameState(TcpClient client, GameState gameState)
+        {
+            var responseData = new ClientResponse
+            {
+                ResponseType = "GameState",
+                GameState = gameState
+            };
+            await SendToClient(client, responseData);
+        }
+
+        public async Task SendGameUserState(TcpClient client, GameUserState gameUserState)
+        {
+            var responseData = new ClientResponse
+            {
+                ResponseType = "GameUserState",
+                GameUserState = gameUserState
+            };
+            await SendToClient(client, responseData);
+        }
+
         public async Task SendErrorResponse(TcpClient client, string responseType, string errorMessage)
         {
             var responseData = new ClientResponse
