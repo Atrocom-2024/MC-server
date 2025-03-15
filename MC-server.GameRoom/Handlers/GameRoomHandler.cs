@@ -196,7 +196,7 @@ namespace MC_server.GameRoom.Handlers
                     _clientManager.UpdateGameUser(client, "userTotalProfit", addCoinsRequest.AddCoinsAmount);
 
                     // 페이아웃 초기화 체크
-                    _clientManager.CheckAndResetPayout(client, gameSession);
+                    await _clientManager.CheckAndResetPayout(client, gameSession);
                     
                     // 요청 클라이언트에게 응답 전송
                     await _clientMessageSender.SendAddCoinsResponse(client, new AddCoinsResponse { AddedCoinsAmount = updatedUser.Coins });
