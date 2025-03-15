@@ -5,19 +5,23 @@ using MC_server.GameRoom.Managers.Models;
 using MC_server.GameRoom.Utils;
 using MC_server.GameRoom.Service;
 using MC_server.GameRoom.Models;
+using MC_server.GameRoom.Communication;
+using System.Threading.Tasks;
 
 namespace MC_server.GameRoom.Managers
 {
     public class ClientManager
     {
+        private readonly ClientMessageSender _clientMessageSender;
         private readonly UserTcpService _userTcpService;
 
         // 현재 연결된 모든 클라이언트를 관리, 각 클라이언트가 어느 룸에 연결되어 있는지 추적 -> 키는 클라이언트 객체, 값은 해당 클라이언트가 속한 룸의 id
         private readonly ConcurrentDictionary<TcpClient, GameUser> _clientStates = new ConcurrentDictionary<TcpClient, GameUser>();
 
-        public ClientManager(UserTcpService userTcpService)
+        public ClientManager(ClientMessageSender clientMessageSender, UserTcpService userTcpService)
         {
-            _userTcpService = userTcpService;
+            _clientMessageSender = clientMessageSender ?? throw new ArgumentNullException(nameof(clientMessageSender));
+            _userTcpService = userTcpService ?? throw new ArgumentNullException(nameof(userTcpService));
         }
 
         public async Task<GameUser> AddClient(TcpClient client, string userId, int roomId)
@@ -26,7 +30,6 @@ namespace MC_server.GameRoom.Managers
             var existingEntry = _clientStates.FirstOrDefault(x => x.Value.UserId == userId);
             if (!existingEntry.Equals(default(KeyValuePair<TcpClient, GameUser>)))
             {
-                Console.WriteLine($"기존 클라이언트 제거: {existingEntry.Key.Client.RemoteEndPoint}");
                 existingEntry.Key.Close();
                 _clientStates.TryRemove(existingEntry.Key, out _);
             }
@@ -153,7 +156,7 @@ namespace MC_server.GameRoom.Managers
             }
         }
 
-        public void CheckAndResetPayout(TcpClient client, GameSession gameSession)
+        public async Task CheckAndResetPayout(TcpClient client, GameSession gameSession)
         {
             var gameUser = GetGameUser(client);
 
@@ -169,29 +172,12 @@ namespace MC_server.GameRoom.Managers
                     var newPayout = GameUserStateUtils.CalculatePayout(gameUser, gameSession);
                     UpdateGameUser(client, "currentPayout", newPayout);
 
-                    var response = new ClientResponse
+                    var gameUserState = new GameUserState
                     {
-                        ResponseType = "GameUserState",
-                        GameUserState = new GameUserState
-                        {
-                            CurrentPayout = gameUser.CurrentPayout,
-                            JackpotProb = gameUser.JackpotProb,
-                        }
+                        CurrentPayout = gameUser.CurrentPayout,
+                        JackpotProb = gameUser.JackpotProb,
                     };
-                    byte[] responseData = ProtobufUtils.SerializeProtobuf(response);
-                    try
-                    {
-                        if (client.Connected)
-                        {
-                            var clientStream = client.GetStream();
-                            clientStream.Write(responseData, 0, responseData.Length);
-                            clientStream.Flush();
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"[socket] Error broadcasting to client: {ex.Message}");
-                    }
+                    await _clientMessageSender.SendGameUserState(client, gameUserState);
                 }
             }
         }

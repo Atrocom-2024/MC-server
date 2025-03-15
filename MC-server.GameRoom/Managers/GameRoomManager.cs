@@ -43,7 +43,6 @@ namespace MC_server.GameRoom.Managers
                     return existingGameSession;
                 }
             );
-            Console.WriteLine($"[socket] Room {roomId}: Jackpot state changed to true");
         }
 
         /// <summary>

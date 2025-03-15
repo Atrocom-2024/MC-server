@@ -119,19 +119,12 @@ namespace MC_server.GameRoom.Handlers
                 await _broadcastMessageSender.BroadcastUserState(joinRequest.RoomId);
 
                 // 6. 요청 클라이언트에게 게임 상태 응답 전송
-                var response = new ClientResponse
+                var gameState = new GameState
                 {
-                    ResponseType = "GameState",
-                    GameState = new GameState
-                    {
-                        TotalJackpotAmount = gameSession.TotalJackpotAmount,
-                        IsJackpot = gameSession.IsJackpot
-                    }
+                    TotalJackpotAmount = gameSession.TotalJackpotAmount,
+                    IsJackpot = gameSession.IsJackpot
                 };
-                byte[] responseData = ProtobufUtils.SerializeProtobuf(response);
-                var stream = client.GetStream();
-                await stream.WriteAsync(responseData, 0, responseData.Length);
-                await stream.FlushAsync();
+                await _clientMessageSender.SendGameState(client, gameState);
             }
             catch (Exception ex)
             {
@@ -220,13 +213,10 @@ namespace MC_server.GameRoom.Handlers
         {
             try
             {
-                Console.WriteLine("[socket] 잭팟 발생!!!!!!!!!!!!");
-
                 // 잭팟이 터진 유저의 코인 수 변경
                 var userInfo = _clientManager.GetGameUser(client);
                 var updatedUser = await _userTcpService.UpdateUserAsync(userInfo.UserId, "coins", jackpotWinRequest.JackpotWinCoins);
                 var roomId = _clientManager.GetUserRoomId(client);
-                var stream = client.GetStream();
 
                 // 존재하지 않는 유저라면 에러 메시지 전송
                 if (updatedUser == null)
