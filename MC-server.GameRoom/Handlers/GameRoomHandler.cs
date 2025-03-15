@@ -4,6 +4,7 @@ using MC_server.GameRoom.Models;
 using MC_server.GameRoom.Managers;
 using MC_server.GameRoom.Service;
 using MC_server.GameRoom.Utils;
+using MC_server.GameRoom.Communication;
 
 namespace MC_server.GameRoom.Handlers
 {
@@ -11,16 +12,20 @@ namespace MC_server.GameRoom.Handlers
     {
         private readonly GameRoomManager _gameRoomManager;
         private readonly ClientManager _clientManager;
+        private readonly ClientMessageSender _clientMessageSender;
+        private readonly BroadcastMessageSender _broadcastMessageSender;
 
         private readonly UserTcpService _userTcpService;
 
         // GameSession에 대한 동기화 제어를 위해 사용됨 -> 다수의 스레드가 동시에 GameSession을 읽거나 수정하려고 할 때 충돌을 방지
         private readonly object _sessionLock = new object();
 
-        public GameRoomHandler(GameRoomManager gameRoomManager, ClientManager clientManager, UserTcpService userTcpService)
+        public GameRoomHandler(GameRoomManager gameRoomManager, ClientManager clientManager, ClientMessageSender clientMessageSender, BroadcastMessageSender broadcastMessageSender, UserTcpService userTcpService)
         {
             _gameRoomManager = gameRoomManager ?? throw new ArgumentNullException(nameof(gameRoomManager));
             _clientManager = clientManager ?? throw new ArgumentNullException(nameof(clientManager));
+            _clientMessageSender = clientMessageSender ?? throw new ArgumentNullException(nameof(clientMessageSender));
+            _broadcastMessageSender = broadcastMessageSender ?? throw new ArgumentNullException(nameof(broadcastMessageSender));
             _userTcpService = userTcpService ?? throw new ArgumentNullException(nameof(userTcpService));
         }
 
@@ -111,17 +116,22 @@ namespace MC_server.GameRoom.Handlers
                 }
 
                 // 5. 유저 상태 브로드캐스트
-                BroadcaseGameUserState(joinRequest.RoomId);
+                await _broadcastMessageSender.BroadcastUserState(joinRequest.RoomId);
 
-                Console.WriteLine($"Jackpot amount is {gameSession.TotalJackpotAmount}");
-                // 6. 게임 상태 브로드캐스트
-                var gameState = new GameState
+                // 6. 요청 클라이언트에게 게임 상태 응답 전송
+                var response = new ClientResponse
                 {
-                    TotalJackpotAmount = gameSession.TotalJackpotAmount,
-                    IsJackpot = gameSession.IsJackpot
+                    ResponseType = "GameState",
+                    GameState = new GameState
+                    {
+                        TotalJackpotAmount = gameSession.TotalJackpotAmount,
+                        IsJackpot = gameSession.IsJackpot
+                    }
                 };
-
-                BroadcastGameState(joinRequest.RoomId, gameState);
+                byte[] responseData = ProtobufUtils.SerializeProtobuf(response);
+                var stream = client.GetStream();
+                await stream.WriteAsync(responseData, 0, responseData.Length);
+                await stream.FlushAsync();
             }
             catch (Exception ex)
             {
@@ -156,15 +166,7 @@ namespace MC_server.GameRoom.Handlers
                     }
 
                     // 요청 클라이언트에게 응답 전송
-                    var response = new ClientResponse
-                    {
-                        ResponseType = "BetResponse",
-                        BetResponseData = new BetResponse { UpdatedCoins = updatedUser.Coins }
-                    };
-                    byte[] responseData = ProtobufUtils.SerializeProtobuf(response);
-                    var stream = client.GetStream();
-                    stream.Write(responseData, 0, responseData.Length);
-                    stream.Flush();
+                    await _clientMessageSender.SendBetResponse(client, new BetResponse { UpdatedCoins = updatedUser.Coins });
                 }
 
                 var gameState = new GameState
@@ -174,10 +176,10 @@ namespace MC_server.GameRoom.Handlers
                 };
 
                 // 변경된 세션 데이터 브로드캐스트
-                BroadcastGameState(roomId, gameState);
+                await _broadcastMessageSender.BroadcastGameState(roomId, gameState);
 
                 // 변경된 게임 유저 상태 브로드캐스트
-                BroadcaseGameUserState(roomId);
+                await _broadcastMessageSender.BroadcastUserState(roomId);
                 
             }
             catch (Exception ex)
@@ -204,15 +206,7 @@ namespace MC_server.GameRoom.Handlers
                     _clientManager.CheckAndResetPayout(client, gameSession);
                     
                     // 요청 클라이언트에게 응답 전송
-                    var response = new ClientResponse
-                    {
-                        ResponseType = "AddCoinsResponse",
-                        AddCoinsResponseData = new AddCoinsResponse { AddedCoinsAmount = updatedUser.Coins }
-                    };
-                    byte[] responseData = ProtobufUtils.SerializeProtobuf(response);
-                    var stream = client.GetStream();
-                    stream.Write(responseData, 0, responseData.Length);
-                    stream.Flush();
+                    await _clientMessageSender.SendAddCoinsResponse(client, new AddCoinsResponse { AddedCoinsAmount = updatedUser.Coins });
                 }
                 Console.WriteLine($"[socket] User Coins Added {addCoinsRequest.AddCoinsAmount}");
             }
@@ -237,27 +231,12 @@ namespace MC_server.GameRoom.Handlers
                 // 존재하지 않는 유저라면 에러 메시지 전송
                 if (updatedUser == null)
                 {
-                    var errorResponse = new ClientResponse
-                    {
-                        ResponseType = "JackpotWinResponse",
-                        ErrorMessage = "User not found"
-                    };
-                    byte[] errorResponseData = ProtobufUtils.SerializeProtobuf(errorResponse);
-                    stream.Write(errorResponseData, 0, errorResponseData.Length);
-                    stream.Flush();
+                    await _clientMessageSender.SendErrorResponse(client, "JackpotWinResponse", "User not found");
                     return;
                 }
 
                 // 성공 응답 처리
-                var response = new ClientResponse
-                {
-                    ResponseType = "JackpotWinResponse",
-                    JackpotWinResponseData = new JackpotWinResponse { AddedCoinsAmount = updatedUser.Coins }
-                };
-                byte[] responseData = ProtobufUtils.SerializeProtobuf(response);
-                stream.Write(responseData, 0, responseData.Length);
-                stream.Flush();
-
+                await _clientMessageSender.SendJackpotWinResponse(client, new JackpotWinResponse { AddedCoinsAmount = updatedUser.Coins });
                 _gameRoomManager.ChangedJackpotState(roomId, true);
                 await _gameRoomManager.ResetGameRoom(roomId); // 게임 룸 초기화
 
@@ -266,80 +245,6 @@ namespace MC_server.GameRoom.Handlers
             catch (Exception ex)
             {
                 Console.WriteLine($"[socket] Error handling jackpot win: {ex.Message}");
-            }
-        }
-
-
-        private void BroadcastGameState(int roomId, GameState gameState)
-        {
-            lock ( _sessionLock) // GameSession 읽기 보호
-            {
-                // 1. 응답 데이터 생성
-                var responseData = new ClientResponse
-                {
-                    ResponseType = "GameState",
-                    GameState = gameState
-                };
-
-                // 2. 해당 룸에 연결된 클라이언트 가져오기
-                var clientsInRoom = _clientManager.GetClientsInRoom(roomId);
-
-                // 3. 공통 브로드캐스트 메서드 호출
-                BroadcastToClients(clientsInRoom, responseData);
-            }
-        }
-
-        public void BroadcaseGameUserState(int roomId)
-        {
-            // 2. 해당 룸에 연결된 클라이언트 가져오기
-            var clientsInRoom = _clientManager.GetClientsInRoom(roomId);
-
-            foreach (var client in clientsInRoom)
-            {
-                var gameUser = _clientManager.GetGameUser(client);
-                var responseData = new ClientResponse
-                {
-                    ResponseType = "GameUserState",
-                    GameUserState = new GameUserState
-                    {
-                        CurrentPayout = gameUser.CurrentPayout,
-                        JackpotProb = gameUser.JackpotProb,
-                    }
-                };
-
-                // 공통 브로드캐스트 메서드 호출
-                BroadcastToClients([ client ], responseData);
-            }
-        }
-
-        private static void BroadcastToClients(IEnumerable<TcpClient> clients, ClientResponse response)
-        {
-            try
-            {
-                // 응답 데이터 직렬화
-                byte[] responseData = ProtobufUtils.SerializeProtobuf(response);
-
-                // 클라이언트들에게 데이터 전송
-                foreach (var client in clients)
-                {
-                    try
-                    {
-                        if (client.Connected)
-                        {
-                            var stream = client.GetStream();
-                            stream.Write(responseData, 0, responseData.Length);
-                            stream.Flush();
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"[socket] Error broadcasting to client: {ex.Message}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[socket] General broadcast error: {ex.Message}");
             }
         }
     }

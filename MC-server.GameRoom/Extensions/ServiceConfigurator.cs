@@ -4,6 +4,7 @@ using MC_server.Core.Extensions;
 using MC_server.GameRoom.Handlers;
 using MC_server.GameRoom.Managers;
 using MC_server.GameRoom.Service;
+using MC_server.GameRoom.Communication;
 
 namespace MC_server.GameRoom.Extensions
 {
@@ -19,6 +20,8 @@ namespace MC_server.GameRoom.Extensions
             serviceCollection.AddSingleton<Program>();
             serviceCollection.AddSingleton<GameRoomManager>();
             serviceCollection.AddSingleton<ClientManager>();
+            serviceCollection.AddSingleton<ClientMessageSender>();
+            serviceCollection.AddSingleton<BroadcastMessageSender>();
 
             serviceCollection.AddScoped<GameRoomHandler>();
             serviceCollection.AddScoped<UserTcpService>();
