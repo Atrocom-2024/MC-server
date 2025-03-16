@@ -155,7 +155,7 @@ namespace MC_server.GameRoom.Managers
                     // 3. 게임 유저 초기화 및 브로드캐스트
                     foreach (var client in clientsInRoom)
                     {
-                        _clientManager.ResetGameUser(client, gameSession);
+                        await _clientManager.ResetGameUser(client, gameSession);
                     }
                     await _broadcastMessageSender.BroadcastUserState(roomId); // 유저 상태 브로드캐스트
 

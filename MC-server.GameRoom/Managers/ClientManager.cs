@@ -6,6 +6,7 @@ using MC_server.GameRoom.Utils;
 using MC_server.GameRoom.Service;
 using MC_server.GameRoom.Models;
 using MC_server.GameRoom.Communication;
+using MC_server.Core.Models;
 
 namespace MC_server.GameRoom.Managers
 {
@@ -140,11 +141,15 @@ namespace MC_server.GameRoom.Managers
             }
         }
 
-        public void ResetGameUser(TcpClient client, GameSession gameSession)
+        public async Task ResetGameUser(TcpClient client, GameSession gameSession)
         {
+
             if (_clientStates.TryGetValue(client, out var gameUser))
             {
+                var user = await _userTcpService.GetUserByIdAsync(gameUser.UserId) ?? throw new Exception("User can not found");
+
                 gameUser.CurrentPayout = 0M;
+                gameUser.InitialCoins = user.Coins;
                 gameUser.UserTotalProfit = 0;
                 gameUser.UserTotalBetAmount = 0;
                 gameUser.UserSessionBetAmount = 0;
