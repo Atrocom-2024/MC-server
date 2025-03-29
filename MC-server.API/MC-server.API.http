@@ -1,0 +1,15 @@
+@MC_server.API_HostAddress = http://localhost:5118
+
+POST {{MC_server.API_HostAddress}}/api/users
+Content-Type: application/json
+
+{
+    "userId": "user123",
+    "username": "JohnDoe",
+    "coins": 1000000,
+    "level": 1,
+    "experience": 0,
+    "provider": "guest"
+}
+
+###
