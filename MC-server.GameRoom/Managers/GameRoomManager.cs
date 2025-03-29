@@ -117,7 +117,7 @@ namespace MC_server.GameRoom.Managers
         /// <returns></returns>
         public async Task ResetGameRoom(int roomId)
         {
-            // TODO: 잭팟이 터졌을 때 해당 룸 세션 초기화 기능 -> 다른 유저들에겐 TotalBetAmount의 10% 반환 후 페이아웃은 반환되지 않고 초기화
+            // TODO: 잭팟으로 인해 세션 초기화 시 TotalBetAmount의 10% 반환 후 페이아웃은 반환되지 않고 초기화
             Console.WriteLine($"[socket] Room {roomId}: Resetting session");
 
             // 잭팟으로 인한 초기화 로직 추가 가능
