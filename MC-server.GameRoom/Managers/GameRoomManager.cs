@@ -5,6 +5,7 @@ using MC_server.GameRoom.Utils;
 using MC_server.GameRoom.Service;
 using MC_server.GameRoom.Communication;
 using MC_server.GameRoom.Enum;
+using System.Net.Sockets;
 
 namespace MC_server.GameRoom.Managers
 {
@@ -115,7 +116,7 @@ namespace MC_server.GameRoom.Managers
         /// </summary>
         /// <param name="roomId"></param>
         /// <returns></returns>
-        public async Task ResetGameRoom(int roomId)
+        public async Task ResetGameRoom(int roomId, TcpClient? jackpotClient = null)
         {
             // TODO: 잭팟으로 인해 세션 초기화 시 TotalBetAmount의 10% 반환 후 페이아웃은 반환되지 않고 초기화
             Console.WriteLine($"[socket] Room {roomId}: Resetting session");
@@ -131,22 +132,36 @@ namespace MC_server.GameRoom.Managers
                 return;
             }
 
-            // 1. 게임 세션 초기화 -> IsJackpot이 false이면 기존의 잭팟 금액 유지
+            // 1. 게임 세션 초기화
             _gameSessions[roomId] = GameSessionUtils.CreateNewSession(room);
             _gameSessions[roomId].TotalUser = clientsInRoom.Count();
             
             // 2. 세션 종료 리워드 브로드캐스트
-            await _broadcastMessageSender.BroadcastGameSessionEnd(roomId);
+            await _broadcastMessageSender.BroadcastGameSessionEnd(roomId, jackpotClient);
             
             try
             {
                 var gameSession = GetGameSession(roomId);
-            
+
                 // 3. 게임 유저 초기화 및 브로드캐스트
-                foreach (var client in clientsInRoom)
-                {
-                    await _clientManager.ResetGameUser(client, gameSession, ResetLevel.Soft);
-                }
+                //if (jackpotClient != null)
+                //{
+                    foreach (var client in clientsInRoom)
+                    {
+                        if (jackpotClient != null && client == jackpotClient)
+                        {
+                            await _clientManager.ResetGameUser(client, gameSession, ResetLevel.Hard);
+                        }
+                        else
+                        {
+                            await _clientManager.ResetGameUser(client, gameSession, ResetLevel.Soft);
+                        }
+                    }
+                //}
+                //foreach (var client in clientsInRoom)
+                //{
+                //    await _clientManager.ResetGameUser(client, gameSession, ResetLevel.Soft);
+                //}
                 await _broadcastMessageSender.BroadcastUserState(roomId); // 유저 상태 브로드캐스트
             
                 // 5. 게임이 초기화 될 때 초기화될 게임 세션의 데이터를 저장 -> 게임 결과 기록 목적

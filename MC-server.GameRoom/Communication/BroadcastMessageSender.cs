@@ -96,12 +96,16 @@ namespace MC_server.GameRoom.Communication
         /// </summary>
         /// <param name="roomId"></param>
         /// <returns></returns>
-        public async Task BroadcastGameSessionEnd(int roomId)
+        public async Task BroadcastGameSessionEnd(int roomId, TcpClient? jackpotClient = null)
         {
             var clients = _clientManager.GetClientsInRoom(roomId);
 
             foreach (var client in clients)
             {
+                if (jackpotClient != null && client == jackpotClient)
+                {
+                    continue;
+                }
                 var gameUser = _clientManager.GetGameUser(client);
                 var rewardCoins = (int)(gameUser.UserSessionBetAmount * 0.1M);
                 var updatedUser = await _userTcpService.UpdateUserAsync(gameUser.UserId, "coins", rewardCoins);

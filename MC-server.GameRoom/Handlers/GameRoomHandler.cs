@@ -134,7 +134,6 @@ namespace MC_server.GameRoom.Handlers
         private async Task HandleBetting(TcpClient client, BetRequest betRequest)
         {
             // TODO: TotalBetAmount가 MaxBetAmount를 초과할 때는 모든 유저들에게 페이아웃 반환하고 모든 유저의 페이아웃 초기화 후 세션 초기화
-            // TODO: TotalBetAmount에 따라 해당 유저의 잭팟 확률을 조정하는 기능
             try
             {
                 int roomId = _clientManager.GetUserRoomId(client);
@@ -219,12 +218,11 @@ namespace MC_server.GameRoom.Handlers
                 }
 
                 // 잭팟이 터진 유저는 하드 리셋
-                await _clientManager.ResetGameUser(client, gameSession, ResetLevel.Hard);
+                //await _clientManager.ResetGameUser(client, gameSession, ResetLevel.Hard);
 
                 // 성공 응답 처리
                 await _clientMessageSender.SendJackpotWinResponse(client, new JackpotWinResponse { AddedCoinsAmount = updatedUser.Coins });
-                _gameRoomManager.ChangedJackpotState(roomId, true);
-                await _gameRoomManager.ResetGameRoom(roomId); // 게임 룸 초기화
+                await _gameRoomManager.ResetGameRoom(roomId, client); // 게임 룸 초기화
 
                 return;
             }
