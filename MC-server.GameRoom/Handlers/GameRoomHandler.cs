@@ -6,8 +6,6 @@ using MC_server.GameRoom.Service;
 using MC_server.GameRoom.Utils;
 using MC_server.GameRoom.Communication;
 using System.Collections.Concurrent;
-using MC_server.GameRoom.Enum;
-using MC_server.GameRoom.Managers.Models;
 
 namespace MC_server.GameRoom.Handlers
 {
@@ -92,7 +90,6 @@ namespace MC_server.GameRoom.Handlers
             {
                 _clientManager.RemoveClient(client); // 클라이언트를 관리 목록에서 제거
                 client.Close();
-                Console.WriteLine("[socket] Connection closed");
             }
 
             // 모든 경로에서 작업 완료
@@ -103,8 +100,6 @@ namespace MC_server.GameRoom.Handlers
         {
             try
             {
-                Console.WriteLine($"Join User ID: {joinRequest.UserId}");
-
                 // 1. 유저가 해당 룸에 Join 시 해당 룸에 유저 정보 등록
                 await _clientManager.AddClient(client, joinRequest.UserId, joinRequest.RoomId);
 
@@ -192,7 +187,6 @@ namespace MC_server.GameRoom.Handlers
                     // 요청 클라이언트에게 응답 전송
                     await _clientMessageSender.SendAddCoinsResponse(client, new AddCoinsResponse { AddedCoinsAmount = updatedUser.Coins });
                 }
-                Console.WriteLine($"[socket] User Coins Added {addCoinsRequest.AddCoinsAmount}");
             }
             catch (Exception ex)
             {
@@ -216,9 +210,6 @@ namespace MC_server.GameRoom.Handlers
                     await _clientMessageSender.SendErrorResponse(client, "JackpotWinResponse", "User not found");
                     return;
                 }
-
-                // 잭팟이 터진 유저는 하드 리셋
-                //await _clientManager.ResetGameUser(client, gameSession, ResetLevel.Hard);
 
                 // 성공 응답 처리
                 await _clientMessageSender.SendJackpotWinResponse(client, new JackpotWinResponse { AddedCoinsAmount = updatedUser.Coins });

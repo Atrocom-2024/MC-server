@@ -40,7 +40,6 @@ namespace MC_server.GameRoom.Service
                                 break;
                             }
                             user.Coins += coinAmount;
-                            Console.WriteLine($"[socket] Updated coins for user to {user.Coins}");
                         }
                         else
                         {

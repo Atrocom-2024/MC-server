@@ -57,7 +57,7 @@ namespace MC_server.GameRoom.Managers
 
         public void RemoveClient(TcpClient client)
         {
-            Console.WriteLine($"[socket] Client disconnected: {client.Client.RemoteEndPoint}");
+            //Console.WriteLine($"[socket] Client disconnected: {client.Client.RemoteEndPoint}");
             _clientStates.TryRemove(client, out _);
         }
 
@@ -186,7 +186,6 @@ namespace MC_server.GameRoom.Managers
             if (_clientStates.TryGetValue(client, out var gameUser))
             {
                 var newJackpotProb = GameUserStateUtils.CalculateJackpotProb(gameUser);
-                Console.WriteLine($"newJackpotProb: {newJackpotProb}");
                 UpdateGameUser(client, "jackpotProb", newJackpotProb);
             }
         }
