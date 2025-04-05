@@ -59,7 +59,7 @@ namespace MC_server.GameRoom
                 {
                     // 2. 클라이언트 연결 대기
                     TcpClient client = await listener.AcceptTcpClientAsync();
-                    Console.WriteLine("[socket] Client conncected!");
+                    //Console.WriteLine("[socket] Client conncected!");
 
                     // 3. 게임 룸 처리 시작
                     _ = _gameRoomHandler.HandleGameRoomAsync(client);
