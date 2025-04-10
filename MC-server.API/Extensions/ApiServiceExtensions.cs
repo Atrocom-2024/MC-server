@@ -9,6 +9,7 @@ namespace MC_server.API.Extensions
             // API 서비스 등록
             services.AddScoped<UserApiService>();
             services.AddScoped<GoogleAuthService>();
+            services.AddScoped<DailySpinApiService>();
 
             services.AddHttpClient<PaymentApiService>();
 

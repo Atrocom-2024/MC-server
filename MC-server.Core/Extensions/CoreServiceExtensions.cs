@@ -14,6 +14,7 @@ namespace MC_server.Core.Extensions
             services.AddScoped<RoomService>();
             services.AddScoped<GameService>();
             services.AddScoped<PaymentService>();
+            services.AddScoped<DailySpinService>();
 
             return services;
         }

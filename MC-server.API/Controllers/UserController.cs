@@ -14,7 +14,7 @@ namespace MC_server.API.Controllers
 
         public UserController(UserApiService userApiService)
         {
-            _userApiService = userApiService;
+            _userApiService = userApiService ?? throw new ArgumentNullException(nameof(userApiService));
         }
 
         // 유저 생성
