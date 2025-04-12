@@ -101,6 +101,29 @@ namespace MC_server.GameRoom.Managers
                 return;
             }
 
+            if (roomId == 5)
+            {
+                // 세션 초기화까지의 총 시간(초)
+                const int totalSeconds = 60;
+                // 남은 시간 변수 초기화
+                int remainingSeconds = totalSeconds;
+
+                // 1초마다 로그를 남길 카운트다운 타이머 생성
+                Timer countdownTimer = new Timer(state =>
+                {
+                    // 남은 시간 로그 출력
+                    Console.WriteLine($"[socket] Room {roomId}: 세션 초기화까지 남은 초: {remainingSeconds}");
+                    remainingSeconds--;
+
+                    // 남은 시간이 0 이하가 되면 카운트다운 타이머 종료
+                    if (remainingSeconds < 0)
+                    {
+                        ((Timer)state)?.Dispose();
+                    }
+                }, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+
+            }
+
             _sessionTimers.AddOrUpdate(roomId, new Timer(async _ =>
             {
                 // 잭팟이 터지거나 시간이 만료되면 초기화

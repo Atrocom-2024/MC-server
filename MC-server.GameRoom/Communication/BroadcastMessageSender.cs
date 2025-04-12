@@ -98,7 +98,6 @@ namespace MC_server.GameRoom.Communication
         /// <returns></returns>
         public async Task BroadcastGameSessionEnd(int roomId, TcpClient? jackpotClient = null)
         {
-            Console.WriteLine($"[socket] Resetting game session for room {roomId}");
             var clients = _clientManager.GetClientsInRoom(roomId);
 
             foreach (var client in clients)
