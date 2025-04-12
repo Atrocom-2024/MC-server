@@ -6,6 +6,7 @@ using MC_server.GameRoom.Service;
 using MC_server.GameRoom.Utils;
 using MC_server.GameRoom.Communication;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 
 namespace MC_server.GameRoom.Handlers
 {
@@ -131,6 +132,7 @@ namespace MC_server.GameRoom.Handlers
             // TODO: TotalBetAmount가 MaxBetAmount를 초과할 때는 모든 유저들에게 페이아웃 반환하고 모든 유저의 페이아웃 초기화 후 세션 초기화
             try
             {
+                Debug.Log("베팅요청");
                 int roomId = _clientManager.GetUserRoomId(client);
                 var gameUser = _clientManager.GetGameUser(client);
                 var gameSession = _gameRoomManager.GetGameSession(roomId);
