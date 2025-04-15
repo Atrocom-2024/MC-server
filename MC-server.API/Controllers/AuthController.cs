@@ -18,6 +18,13 @@ namespace MC_server.API.Controllers
             _userApiService = userApiService ?? throw new ArgumentNullException(nameof(userApiService));
         }
 
+        /// <summary>
+        /// 구글 인증 메서드
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        /// <exception cref="ValidationException"></exception>
+        /// <exception cref="UnauthorizedAccessException"></exception>
         [HttpPost("google")]
         public async Task<IActionResult> GoogleAuth([FromBody] GoogleAuthRequest request)
         {
